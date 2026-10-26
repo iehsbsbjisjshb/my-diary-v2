@@ -1,5 +1,6 @@
 import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
+import { setupDatePicker } from './datepicker.js';
 
 let currentMondayDate = getMonday(new Date());
 let activeModalTask = null; // null | { isNew: boolean, id?: string, date: string, title: string, time: string, duration: number|string, category: string, note: string }
@@ -131,9 +132,9 @@ export function render(container, state) {
       <!-- Навигация по неделям -->
       <div class="week-toolbar">
         <div class="week-nav-group">
-          <button class="btn btn-nav" id="week-prev" aria-label="Предыдущая неделя" title="Предыдущая неделя">←</button>
+          <button class="btn btn-nav" id="week-prev" aria-label="Предыдущая неделя" title="Предыдущая неделя"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
           <span class="week-title-range">${formatWeekRange(currentMondayDate, sunday)}</span>
-          <button class="btn btn-nav" id="week-next" aria-label="Следующая неделя" title="Следующая неделя">→</button>
+          <button class="btn btn-nav" id="week-next" aria-label="Следующая неделя" title="Следующая неделя"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
         </div>
         <div class="week-toolbar-actions">
           <button class="btn btn-today" id="week-today-btn">Сегодня</button>
@@ -146,7 +147,7 @@ export function render(container, state) {
           ? `
           <div class="week-plan-banner">
             <div class="week-plan-info">
-              <span class="week-plan-icon">⚠️</span>
+              <span class="week-plan-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
               <span>Эта неделя (<strong>${weekIsoStr}</strong>) не спланирована</span>
             </div>
             <button class="btn btn-accent btn-sm" id="btn-mark-week-planned">Отметить как спланированную</button>
@@ -222,20 +223,19 @@ function renderTaskCardHtml(task) {
          draggable="true">
       <div class="task-card-main">
         <label class="task-checkbox-label" title="Отметить выполненной">
-          <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.done ? 'checked' : ''}>
-          <span class="checkbox-circle"></span>
+          <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.done ? 'checked' : ''} />
         </label>
         
         <div class="task-content-clickable" data-task-id="${task.id}">
           <div class="task-title">
-            ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение">🔄</span> ' : ''}${escapeHtml(task.title)}
+            ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span> ' : ''}${escapeHtml(task.title)}
           </div>
           
           <div class="task-meta-line">
             ${timeLabel ? `<span class="task-time-badge">${timeLabel}</span>` : ''}
             ${
               isRepetition
-                ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+                ? '<span class="task-chip chip-chinese-repeat">Повторение</span>'
                 : `<span class="task-chip ${cat.className}">${cat.label}</span>`
             }
           </div>
@@ -243,7 +243,7 @@ function renderTaskCardHtml(task) {
           ${task.note ? `<div class="task-note">${escapeHtml(task.note)}</div>` : ''}
         </div>
 
-        <button class="btn-task-action" data-delete-task-id="${task.id}" title="Удалить задачу" aria-label="Удалить">✕</button>
+        <button class="btn-task-action" data-delete-task-id="${task.id}" title="Удалить задачу" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
     </div>
   `;
@@ -256,7 +256,7 @@ function renderTaskModalHtml(fields) {
       <div class="modal-card task-modal-card">
         <div class="modal-header">
           <h3>${fields.isNew ? 'Новая задача' : 'Редактирование задачи'}</h3>
-          <button class="modal-close" id="btn-close-task-modal" type="button">✕</button>
+          <button class="modal-close" id="btn-close-task-modal" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
 
         <form class="task-modal-form" id="form-task-modal" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}">
@@ -480,6 +480,9 @@ function attachEventListeners(container, state, meta) {
     });
   }
 
+  // Flatpickr кастомный календарь для модалки задачи
+  setupDatePicker(container.querySelectorAll('#task-date-input'));
+
   // Сабмит модалки задачи
   container.querySelector('#form-task-modal')?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -575,7 +578,7 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
-  // Кнопка удаления задачи (✕) с отменой через Toast (без блокирующего confirm)
+  // Кнопка удаления задачи с отменой через Toast (без блокирующего confirm)
   container.querySelectorAll('.btn-task-action').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();

@@ -1,5 +1,6 @@
 import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
+import { setupDatePicker } from './datepicker.js';
 
 let selectedDate = new Date();
 let isEditingReview = false;
@@ -187,7 +188,7 @@ export function render(container, state) {
           ? `
           <div class="week-plan-banner today-weekend-banner">
             <div class="week-plan-info">
-              <span class="week-plan-icon">📅</span>
+              <span class="week-plan-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></span>
               <span>Спланируй следующую неделю (<strong>${nextIsoWeek}</strong>)</span>
             </div>
             <button class="btn btn-accent btn-sm" id="btn-goto-week-plan">Перейти к планированию</button>
@@ -218,7 +219,7 @@ export function render(container, state) {
         <div class="chinese-widget">
           <div class="chinese-header">
             <div class="streak-badge">
-              <span class="fire-icon">🔥</span>
+              <span class="fire-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/></svg></span>
               <span class="streak-text">${currentStreak} ${getPluralDays(currentStreak)} подряд</span>
             </div>
             <button class="btn btn-accent btn-sm" id="btn-open-minutes-modal">+ Отметить занятие</button>
@@ -258,7 +259,7 @@ export function render(container, state) {
           ? `
           <section class="today-section overdue-section">
             <div class="overdue-header">
-              <span class="overdue-title">⚠️ Просрочено (${overdueTasks.length + overdueHomework.length})</span>
+              <span class="overdue-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Просрочено (${overdueTasks.length + overdueHomework.length})</span>
             </div>
             <div class="overdue-list">
               ${overdueTasks
@@ -270,14 +271,14 @@ export function render(container, state) {
                     <span class="overdue-title-text">${escapeHtml(t.title)}</span>
                     ${
                       t.category === 'chinese' && (t.title || '').toLowerCase().includes('повторить')
-                        ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+                        ? '<span class="task-chip chip-chinese-repeat">Повторение</span>'
                         : `<span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>`
                     }
                   </div>
                   <div class="overdue-actions">
-                    <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${t.id}" data-type="task">✓ Готово</button>
-                    <button class="btn-overdue btn-overdue-tomorrow" data-action="tomorrow" data-id="${t.id}" data-type="task">→ На завтра</button>
-                    <button class="btn-overdue btn-overdue-delete" data-action="delete" data-id="${t.id}" data-type="task">✕ Удалить</button>
+                    <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${t.id}" data-type="task">Готово</button>
+                    <button class="btn-overdue btn-overdue-tomorrow" data-action="tomorrow" data-id="${t.id}" data-type="task">На завтра</button>
+                    <button class="btn-overdue btn-overdue-delete" data-action="delete" data-id="${t.id}" data-type="task">Удалить</button>
                   </div>
                 </div>
               `
@@ -294,9 +295,9 @@ export function render(container, state) {
                     <span class="task-chip chip-homework">Домашка</span>
                   </div>
                   <div class="overdue-actions">
-                    <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${h.id}" data-type="homework">✓ Готово</button>
-                    <button class="btn-overdue btn-overdue-tomorrow" data-action="tomorrow" data-id="${h.id}" data-type="homework">→ На завтра</button>
-                    <button class="btn-overdue btn-overdue-delete" data-action="delete" data-id="${h.id}" data-type="homework">✕ Удалить</button>
+                    <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${h.id}" data-type="homework">Готово</button>
+                    <button class="btn-overdue btn-overdue-tomorrow" data-action="tomorrow" data-id="${h.id}" data-type="homework">На завтра</button>
+                    <button class="btn-overdue btn-overdue-delete" data-action="delete" data-id="${h.id}" data-type="homework">Удалить</button>
                   </div>
                 </div>
               `
@@ -312,18 +313,29 @@ export function render(container, state) {
       <section class="today-section timeline-section">
         <div class="timeline-header">
           <div class="timeline-header-left">
-            <h2 class="schedule-day-title">${displayDayTitle}</h2>
-            <label class="schedule-day-subtitle-label" title="Нажмите, чтобы выбрать дату">
-              <span class="schedule-day-subtitle">${formatScheduleSubtitle(selectedDate)}</span>
-              <input type="date" class="schedule-hidden-date-input" id="day-picker-input" value="${selectedDateISO}" />
-            </label>
-            <div class="schedule-day-nav-arrows">
-              <button class="btn-schedule-arrow" id="day-prev" aria-label="Предыдущий день" title="Предыдущий день">‹</button>
-              <button class="btn-schedule-arrow" id="day-next" aria-label="Следующий день" title="Следующий день">›</button>
-              ${!isViewingToday ? '<button class="btn-schedule-today" id="btn-day-today">Сегодня</button>' : ''}
+            <div class="schedule-title-row">
+              <h2 class="schedule-day-title">${displayDayTitle}</h2>
+              <div class="schedule-day-nav-arrows">
+                <button type="button" class="btn-schedule-arrow" id="day-prev" aria-label="Предыдущий день" title="Предыдущий день">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <button type="button" class="btn-schedule-arrow" id="day-next" aria-label="Следующий день" title="Следующий день">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                ${!isViewingToday ? '<button type="button" class="btn-schedule-today" id="btn-day-today">Сегодня</button>' : ''}
+              </div>
+            </div>
+            <div class="schedule-date-picker-wrap">
+              <button type="button" class="schedule-date-btn" id="btn-trigger-day-picker" title="Выбрать дату в календаре">
+                <span class="schedule-cal-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </span>
+                <span class="schedule-day-subtitle">${formatScheduleSubtitle(selectedDate)}</span>
+              </button>
+              <input type="date" class="schedule-hidden-date-input" id="day-picker-input" value="${selectedDateISO}" tabindex="-1" aria-hidden="true" />
             </div>
           </div>
-          <button class="btn btn-accent btn-sm btn-schedule-add" id="btn-today-add-task">+ Новая задача</button>
+          <button type="button" class="btn btn-accent btn-sm btn-schedule-add" id="btn-today-add-task">+ Новая задача</button>
         </div>
 
         ${
@@ -358,7 +370,7 @@ export function render(container, state) {
       <section class="today-section review-section">
         <details class="review-details" id="details-today-review" ${currentReviewOpen ? 'open' : ''}>
           <summary class="review-summary">
-            <span>✨ Разбор дня ${isEvening ? '(вечерний итог)' : ''}</span>
+            <span>Разбор дня ${isEvening ? '(вечерний итог)' : ''}</span>
           </summary>
           
           <div class="review-content">
@@ -395,8 +407,8 @@ export function render(container, state) {
           <div class="modal-overlay" id="study-modal-overlay">
             <div class="modal-card">
               <div class="modal-header">
-                <h3>🇨🇳 Отметить занятие китайским</h3>
-                <button class="modal-close" id="btn-close-modal" type="button">✕</button>
+                <h3>Отметить занятие китайским</h3>
+                <button class="modal-close" id="btn-close-modal" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
               <form id="form-add-study-session">
                 <div class="modal-field-group">
@@ -436,7 +448,7 @@ export function render(container, state) {
                     <button type="button" class="btn-words-chip" data-words="10">+10 слов</button>
                     <button type="button" class="btn-words-chip" data-words="20">+20 слов</button>
                   </div>
-                  <p class="modal-hint">🔄 При вводе слов автоматически создадутся задачи на повторение на завтра (+1), через 3 и через 7 дней.</p>
+                  <p class="modal-hint">При вводе слов автоматически создадутся задачи на повторение на завтра (+1), через 3 и через 7 дней.</p>
                 </div>
 
                 <div class="modal-actions" style="margin-top: 16px;">
@@ -470,20 +482,19 @@ function renderTimelineCard(item) {
       <div class="timeline-body ${!isHomework ? 'timeline-body-clickable' : ''}" data-task-id="${item.id}">
         <label class="task-checkbox-label" title="Отметить выполненной">
           <input type="checkbox" class="today-item-checkbox" data-id="${item.id}" data-type="${item.itemType}" ${item.done ? 'checked' : ''} />
-          <span class="checkbox-circle"></span>
         </label>
         <span class="timeline-title ${item.done ? 'title-done' : ''}">
-          ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение">🔄</span> ' : ''}${escapeHtml(item.title)}
+          ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span> ' : ''}${escapeHtml(item.title)}
         </span>
         ${
           isRepetition
-            ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+            ? '<span class="task-chip chip-chinese-repeat">Повторение</span>'
             : `<span class="task-chip ${isHomework ? 'chip-homework' : cat.className}">${isHomework ? 'Домашка' : cat.label}</span>`
         }
       </div>
       ${
         !isHomework
-          ? `<button class="btn-task-action btn-timeline-delete" data-delete-task-id="${item.id}" title="Удалить задачу" aria-label="Удалить">✕</button>`
+          ? `<button class="btn-task-action btn-timeline-delete" data-delete-task-id="${item.id}" title="Удалить задачу" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
           : ''
       }
     </div>
@@ -497,7 +508,7 @@ function renderTodayTaskModalHtml(fields) {
       <div class="modal-card task-modal-card">
         <div class="modal-header">
           <h3>${fields.isNew ? 'Новая задача на сегодня' : 'Редактирование задачи'}</h3>
-          <button class="modal-close" id="btn-close-today-task-modal" type="button">✕</button>
+          <button class="modal-close" id="btn-close-today-task-modal" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
 
         <form class="task-modal-form" id="form-today-task-modal" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}">
@@ -605,13 +616,32 @@ function attachEventListeners(container, state, meta) {
     render(container, getState());
   });
 
-  // Навигация по дням: Выбор даты через встроенный datepicker
-  container.querySelector('#day-picker-input')?.addEventListener('change', (e) => {
-    if (e.target.value) {
-      selectedDate = parseLocalDate(e.target.value);
-      render(container, getState());
-    }
-  });
+  // Навигация по дням: Выбор даты через кастомный flatpickr
+  const dayPickerInput = container.querySelector('#day-picker-input');
+  const triggerDayBtn = container.querySelector('#btn-trigger-day-picker');
+  if (dayPickerInput && window.flatpickr) {
+    if (dayPickerInput._flatpickr) dayPickerInput._flatpickr.destroy();
+    const fp = window.flatpickr(dayPickerInput, {
+      locale: window.flatpickr.l10ns?.ru || 'ru',
+      dateFormat: 'Y-m-d',
+      defaultDate: selectedDateISO,
+      positionElement: triggerDayBtn || dayPickerInput,
+      disableMobile: true,
+      onChange: (selectedDates, dateStr) => {
+        if (dateStr) {
+          selectedDate = parseLocalDate(dateStr);
+          render(container, getState());
+        }
+      }
+    });
+    triggerDayBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      fp.open();
+    });
+  }
+
+  // Календарь для модалки задачи на сегодня
+  setupDatePicker(container.querySelectorAll('#today-task-date-input'));
 
   // Escape key handler
   const onKeyDown = (e) => {

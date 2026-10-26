@@ -1,5 +1,6 @@
 import { getState, setState, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY } from '../storage.js';
 import { showToast } from '../toast.js';
+import { setupDatePicker } from './datepicker.js';
 
 let activeTab = 'schedule'; // 'schedule' | 'homework'
 let activeBaseDay = '1'; // '1' .. '7' для редактирования базового расписания
@@ -96,10 +97,10 @@ export function render(container, state) {
       <!-- Навигация по вкладкам -->
       <div class="school-tab-bar">
         <button class="school-tab-btn ${activeTab === 'schedule' ? 'active' : ''}" id="tab-schedule-btn">
-          📅 Расписание
+          Расписание
         </button>
         <button class="school-tab-btn ${activeTab === 'homework' ? 'active' : ''}" id="tab-homework-btn">
-          📚 Домашка
+          Домашка
           ${homework.filter((h) => h && !h.done).length > 0 ? `<span class="badge-count">${homework.filter((h) => h && !h.done).length}</span>` : ''}
         </button>
       </div>
@@ -171,7 +172,7 @@ function renderScheduleTab(schedule, meta) {
           <span class="schedule-subtitle">Пн–Вс с учетом замен</span>
         </div>
         <button class="btn btn-accent btn-sm" id="btn-toggle-override-editor">
-          ${showOverrideEditor ? 'Закрыть редактор замены' : '✏️ Изменить расписание на дату'}
+          ${showOverrideEditor ? 'Закрыть редактор замены' : 'Изменить расписание на дату'}
         </button>
       </div>
 
@@ -209,7 +210,7 @@ function renderScheduleTab(schedule, meta) {
                       <span class="lesson-time">${escapeHtml(l.time || (resolveBellTime(isSatOv, idx + 1) || '—'))}</span>
                       <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                       <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
-                      <button class="btn-delete-lesson" data-delete-override-idx="${idx}" title="Удалить">✕</button>
+                      <button class="btn-delete-lesson" data-delete-override-idx="${idx}" title="Удалить" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                     </div>
                   `
                       )
@@ -253,7 +254,7 @@ function renderScheduleTab(schedule, meta) {
               </div>
               <div class="day-header-actions">
                 ${day.hasOverride ? `<span class="badge-override-tag" title="Расписание заменено">замена</span>` : ''}
-                <button type="button" class="btn-day-override" data-override-date="${day.iso}" title="Замена на ${day.dayShort} (${day.dayOfMonth} ${day.monthName})">✏️</button>
+                <button type="button" class="btn-day-override" data-override-date="${day.iso}" title="Замена на ${day.dayShort} (${day.dayOfMonth} ${day.monthName})" aria-label="Замена"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
               </div>
             </div>
 
@@ -286,7 +287,7 @@ function renderScheduleTab(schedule, meta) {
       <div class="schedule-management-blocks">
         <!-- 1. Редактор базового расписания -->
         <details class="school-details" id="details-base-schedule" ${isBaseScheduleOpen ? 'open' : ''}>
-          <summary class="school-details-summary">⚙️ Редактор базового расписания (Пн–Вс)</summary>
+          <summary class="school-details-summary">Редактор базового расписания (Пн–Вс)</summary>
           <div class="school-details-content">
             <!-- Выбор дня недели для редактирования базы -->
             <div class="base-day-selector">
@@ -303,7 +304,7 @@ function renderScheduleTab(schedule, meta) {
               <div class="base-day-header-row">
                 <h4>${DAYS_FULL_RU[parseInt(activeBaseDay, 10) - 1]} (базовое)</h4>
                 <button type="button" class="btn btn-secondary btn-xs btn-reset-10r" id="btn-reset-10r-template" title="Восстановить базовое расписание 10Р">
-                  🔄 Загрузить расписание 10Р
+                  Загрузить расписание 10Р
                 </button>
               </div>
 
@@ -320,7 +321,7 @@ function renderScheduleTab(schedule, meta) {
                         <span class="lesson-time">${escapeHtml(l.time || (resolveBellTime(activeBaseDay === '6', idx + 1) || '—'))}</span>
                         <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                         <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
-                        <button class="btn-delete-lesson" data-delete-base-day="${activeBaseDay}" data-delete-base-idx="${idx}" title="Удалить">✕</button>
+                        <button class="btn-delete-lesson" data-delete-base-day="${activeBaseDay}" data-delete-base-idx="${idx}" title="Удалить" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                       </div>
                     `
                         )
@@ -343,7 +344,7 @@ function renderScheduleTab(schedule, meta) {
 
         <!-- 2. Редактор звонков -->
         <details class="school-details" id="details-bells" ${isBellsOpen ? 'open' : ''}>
-          <summary class="school-details-summary">🔔 Редактор звонков (${(schedule.bells || []).length})</summary>
+          <summary class="school-details-summary">Редактор звонков (${(schedule.bells || []).length})</summary>
           <div class="school-details-content">
             <div class="bells-list">
               ${
@@ -355,7 +356,7 @@ function renderScheduleTab(schedule, meta) {
                     <div class="bell-item">
                       <span class="bell-num">№${b.number || idx + 1}</span>
                       <span class="bell-time">${escapeHtml(b.start)} – ${escapeHtml(b.end)}</span>
-                      <button class="btn-delete-bell" data-delete-bell-idx="${idx}" title="Удалить">✕</button>
+                      <button class="btn-delete-bell" data-delete-bell-idx="${idx}" title="Удалить" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                     </div>
                   `
                       )
@@ -451,7 +452,7 @@ function renderHomeworkTab(homework, knownSubjects, meta) {
             ? `
             <div class="hw-group hw-group-overdue">
               <div class="hw-group-header">
-                <h3>⚠️ Просрочено (${overdueHw.length})</h3>
+                <h3>Просрочено (${overdueHw.length})</h3>
               </div>
               <div class="hw-list">
                 ${overdueHw.map((h) => renderHomeworkItem(h, true)).join('')}
@@ -464,7 +465,7 @@ function renderHomeworkTab(homework, knownSubjects, meta) {
         <!-- 2. Сегодня -->
         <div class="hw-group">
           <div class="hw-group-header">
-            <h3>📌 Сегодня (${todayHw.length})</h3>
+            <h3>Сегодня (${todayHw.length})</h3>
           </div>
           <div class="hw-list">
             ${
@@ -478,7 +479,7 @@ function renderHomeworkTab(homework, knownSubjects, meta) {
         <!-- 3. Завтра -->
         <div class="hw-group">
           <div class="hw-group-header">
-            <h3>⏰ Завтра (${tomorrowHw.length})</h3>
+            <h3>Завтра (${tomorrowHw.length})</h3>
           </div>
           <div class="hw-list">
             ${
@@ -495,7 +496,7 @@ function renderHomeworkTab(homework, knownSubjects, meta) {
             ? `
             <div class="hw-group">
               <div class="hw-group-header">
-                <h3>📅 Позже (${laterHw.length})</h3>
+                <h3>Позже (${laterHw.length})</h3>
               </div>
               <div class="hw-list">
                 ${laterHw.map((h) => renderHomeworkItem(h, false)).join('')}
@@ -529,9 +530,8 @@ function renderHomeworkItem(h, isOverdue) {
   return `
     <div class="hw-item ${isOverdue ? 'hw-item-overdue' : ''} ${h.done ? 'hw-item-done' : ''}">
       <div class="hw-item-main">
-        <label class="task-checkbox-label">
+        <label class="task-checkbox-label" title="Отметить выполненной">
           <input type="checkbox" class="hw-checkbox" data-hw-id="${h.id}" ${h.done ? 'checked' : ''} />
-          <span class="checkbox-circle"></span>
         </label>
         <div class="hw-item-body">
           <div class="hw-item-meta">
@@ -543,8 +543,8 @@ function renderHomeworkItem(h, isOverdue) {
       </div>
 
       <div class="hw-item-actions">
-        <button class="btn btn-secondary btn-sm btn-reschedule" data-hw-id="${h.id}">📅 Перенести</button>
-        <button class="btn-delete-hw" data-delete-hw-id="${h.id}" title="Удалить">✕</button>
+        <button class="btn btn-secondary btn-sm btn-reschedule" data-hw-id="${h.id}">Перенести</button>
+        <button class="btn-delete-hw" data-delete-hw-id="${h.id}" title="Удалить" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <!-- Инлайн форма переноса срока -->
@@ -582,6 +582,9 @@ function attachEventListeners(container, state, meta) {
   });
 
   if (activeTab === 'schedule') {
+    // Кастомный календарь flatpickr для оверрайда
+    setupDatePicker(container.querySelectorAll('#override-date-input'));
+
     // Быстрая замена по клику на день недели
     container.querySelectorAll('.btn-day-override').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -843,6 +846,9 @@ function attachEventListeners(container, state, meta) {
   }
 
   if (activeTab === 'homework') {
+    // Кастомный календарь flatpickr для домашки и переноса
+    setupDatePicker(container.querySelectorAll('#hw-due-date, .reschedule-date-input'));
+
     // Валидация полей домашки
     const hwSubjectInput = container.querySelector('#hw-subject');
     const hwTitleInput = container.querySelector('#hw-title');

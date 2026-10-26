@@ -54,7 +54,7 @@ export function render(container, state) {
       <!-- Тулбар поиска и добавления -->
       <div class="notes-toolbar">
         <div class="notes-search-box">
-          <span class="notes-search-icon">🔍</span>
+          <span class="notes-search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input 
             type="search" 
             class="form-input notes-search-input" 
@@ -64,7 +64,7 @@ export function render(container, state) {
           />
           ${
             notesSearchQuery
-              ? '<button class="notes-search-clear" id="btn-clear-notes-search" type="button" title="Очистить">✕</button>'
+              ? '<button class="notes-search-clear" id="btn-clear-notes-search" type="button" title="Очистить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
               : ''
           }
         </div>
@@ -100,7 +100,7 @@ function renderNoteCard(note) {
         <div class="note-date">${formatNoteDate(note.created)}</div>
       </div>
       <div class="note-actions">
-        <button class="btn-delete-note" data-delete-note-id="${note.id}" title="Удалить заметку" aria-label="Удалить">✕</button>
+        <button class="btn-delete-note" data-delete-note-id="${note.id}" title="Удалить заметку" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
     </div>
   `;
@@ -113,7 +113,7 @@ function renderNoteModalHtml(fields) {
       <div class="modal-card note-modal-card">
         <div class="modal-header">
           <h3>${fields.isNew ? 'Новая заметка' : 'Редактирование заметки'}</h3>
-          <button class="modal-close" id="btn-close-note-modal" type="button">✕</button>
+          <button class="modal-close" id="btn-close-note-modal" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
 
         <form class="note-modal-form" id="form-note-modal" data-mode="${fields.isNew ? 'new' : 'edit'}" data-note-id="${fields.id || ''}">
@@ -288,7 +288,7 @@ function attachEventListeners(container, state) {
     }
   });
 
-  // Кнопка удаления заметки (✕) с Undo Toast
+  // Кнопка удаления заметки с Undo Toast
   container.querySelectorAll('.btn-delete-note').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();

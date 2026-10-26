@@ -1,6 +1,7 @@
 import { getState, setState, resetState } from '../storage.js';
 import { isConfigured, pullAndMerge, pushImmediate, setInitialLoadComplete } from '../sync.js';
 import { showToast } from '../toast.js';
+import { setupDatePicker } from './datepicker.js';
 
 let isAddingGoal = false;
 let editingGoalId = null;
@@ -45,7 +46,7 @@ export function render(container, state) {
         <div class="settings-card">
           <div class="settings-card-header-row">
             <div>
-              <h3>🎯 Главные цели</h3>
+              <h3>Главные цели</h3>
               <p class="settings-subtext">Отображаются в шапке главного экрана «Распорядок»</p>
             </div>
             ${
@@ -81,8 +82,8 @@ export function render(container, state) {
                       ${g.deadline ? `<span class="goal-manage-deadline">до ${escapeHtml(g.deadline)}</span>` : ''}
                     </div>
                     <div class="goal-manage-actions">
-                      <button class="btn btn-secondary btn-sm btn-edit-goal" data-edit-goal-id="${g.id}" title="Редактировать">✎</button>
-                      <button class="btn-delete-goal" data-delete-goal-id="${g.id}" title="Удалить цель">✕</button>
+                      <button class="btn btn-secondary btn-sm btn-edit-goal" data-edit-goal-id="${g.id}" title="Редактировать" aria-label="Редактировать"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                      <button class="btn-delete-goal" data-delete-goal-id="${g.id}" title="Удалить цель" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                     </div>
                   </div>
                 `
@@ -97,7 +98,7 @@ export function render(container, state) {
       <section class="settings-section">
         <div class="settings-card">
           <div class="settings-card-header">
-            <h3>🇨🇳 Китайский язык</h3>
+            <h3>Китайский язык</h3>
             <p class="settings-subtext">Параметры ежедневного времени и целей по словарному запасу HSK</p>
           </div>
 
@@ -126,7 +127,7 @@ export function render(container, state) {
       <section class="settings-section">
         <div class="settings-card">
           <div class="settings-card-header">
-            <h3>☁️ Синхронизация (Cloudflare Worker)</h3>
+            <h3>Синхронизация (Cloudflare Worker)</h3>
             <p class="settings-subtext">GET / PUT /state с авторизацией заголовком X-Sync-Secret</p>
           </div>
 
@@ -144,7 +145,7 @@ export function render(container, state) {
             <div class="sync-actions-row">
               <button type="submit" class="btn btn-secondary btn-sm" id="btn-save-sync">Сохранить</button>
               <button type="button" class="btn btn-accent btn-sm" id="btn-sync-now" ${isSyncing ? 'disabled' : ''}>
-                ${isSyncing ? 'Синхронизация...' : '🔄 Синхронизировать сейчас'}
+                ${isSyncing ? 'Синхронизация...' : 'Синхронизировать сейчас'}
               </button>
             </div>
           </form>
@@ -162,17 +163,17 @@ export function render(container, state) {
       <section class="settings-section">
         <div class="settings-card">
           <div class="settings-card-header">
-            <h3>💾 Управление данными</h3>
+            <h3>Управление данными</h3>
             <p class="settings-subtext">Резервное копирование и полный сброс</p>
           </div>
 
           <div class="settings-backup-actions">
-            <button class="btn btn-secondary btn-sm" id="btn-export-json">📥 Экспорт JSON</button>
+            <button class="btn btn-secondary btn-sm" id="btn-export-json">Экспорт JSON</button>
             <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
-              📤 Импорт JSON
+              Импорт JSON
               <input type="file" id="input-import-json" accept=".json,application/json" style="display: none;" />
             </label>
-            <button class="btn btn-danger btn-sm" id="btn-open-reset-modal">🗑 Сбросить всё</button>
+            <button class="btn btn-danger btn-sm" id="btn-open-reset-modal">Сбросить всё</button>
           </div>
         </div>
       </section>
@@ -193,8 +194,8 @@ export function render(container, state) {
           <div class="modal-overlay" id="reset-modal-overlay">
             <div class="modal-card modal-card-danger">
               <div class="modal-header">
-                <h3 style="color: #f87171;">⚠️ Подтверждение полного сброса</h3>
-                <button class="modal-close" id="btn-close-reset-modal">✕</button>
+                <h3 style="color: #dc2626;">Подтверждение полного сброса</h3>
+                <button class="modal-close" id="btn-close-reset-modal" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
 
               <div class="modal-body-danger">
@@ -272,7 +273,7 @@ async function handleManualSync(container) {
   if (secret) localStorage.setItem('syncSecret', secret);
 
   if (!isConfigured()) {
-    syncStatusMessage = '❌ Укажите URL воркера и секретный ключ';
+    syncStatusMessage = 'Укажите URL воркера и секретный ключ';
     showToast('Укажите URL и секрет', { type: 'error' });
     render(container, getState());
     return;
@@ -285,21 +286,21 @@ async function handleManualSync(container) {
   try {
     const merged = await pullAndMerge();
     if (merged) {
-      syncStatusMessage = `✓ Синхронизация успешна (${new Date().toLocaleTimeString('ru-RU')})`;
+      syncStatusMessage = `Синхронизация успешна (${new Date().toLocaleTimeString('ru-RU')})`;
       showToast('Синхронизировано', { type: 'success' });
     } else {
       // Если на сервере пусто или первая синхронизация с существующими локальными данными:
       const success = await pushImmediate(getState());
       if (success) {
-        syncStatusMessage = `✓ Данные сохранены на сервере (${new Date().toLocaleTimeString('ru-RU')})`;
+        syncStatusMessage = `Данные сохранены на сервере (${new Date().toLocaleTimeString('ru-RU')})`;
         showToast('Сохранено на сервере', { type: 'success' });
       } else {
-        syncStatusMessage = '❌ Ошибка синхронизации с сервером';
+        syncStatusMessage = 'Ошибка синхронизации с сервером';
         showToast('Синхронизация не удалась', { type: 'error' });
       }
     }
   } catch (err) {
-    syncStatusMessage = `❌ Ошибка: ${err?.message || err}`;
+    syncStatusMessage = `Ошибка: ${err?.message || err}`;
     showToast('Синхронизация не удалась', { type: 'error' });
   } finally {
     isSyncing = false;
@@ -308,6 +309,8 @@ async function handleManualSync(container) {
 }
 
 function attachEventListeners(container, state) {
+  // Кастомный календарь flatpickr для дедлайна цели
+  setupDatePicker(container.querySelectorAll('#goal-deadline-input'));
   // Валидация поля цели
   const goalTitleInput = container.querySelector('#goal-title-input');
   const btnSaveGoal = container.querySelector('#btn-save-goal');
@@ -418,7 +421,7 @@ function attachEventListeners(container, state) {
     localStorage.setItem('syncSecret', secret);
 
     if (!isConfigured()) {
-      syncStatusMessage = '❌ Укажите URL воркера и секретный ключ';
+      syncStatusMessage = 'Укажите URL воркера и секретный ключ';
       showToast('Укажите URL и секрет', { type: 'error' });
       render(container, getState());
       return;
@@ -432,14 +435,14 @@ function attachEventListeners(container, state) {
     try {
       const merged = await pullAndMerge();
       if (merged) {
-        syncStatusMessage = `✓ Данные успешно загружены с сервера (${new Date().toLocaleTimeString('ru-RU')})`;
+        syncStatusMessage = `Данные успешно загружены с сервера (${new Date().toLocaleTimeString('ru-RU')})`;
         showToast('Данные синхронизированы', { type: 'success' });
       } else {
-        syncStatusMessage = '⚠️ Сервер ответил, но данных нет или неверный ключ';
+        syncStatusMessage = 'Сервер ответил, но данных нет или неверный ключ';
         showToast('Данные на сервере не найдены', { type: 'error' });
       }
     } catch (err) {
-      syncStatusMessage = `❌ Ошибка: ${err?.message || err}`;
+      syncStatusMessage = `Ошибка: ${err?.message || err}`;
       showToast('Синхронизация не удалась', { type: 'error' });
     } finally {
       setInitialLoadComplete(true);

@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" fill="#8b5cf6"/>
-  <text x="256" y="256" dy="-0.03em" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="298" fill="#ffffff" text-anchor="middle" dominant-baseline="central">Д</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <rect width="100" height="100" rx="22" fill="#111827"/>
+  <rect x="25" y="25" width="14" height="50" rx="4" fill="#4b5563"/>
+  <rect x="43" y="25" width="14" height="35" rx="4" fill="#ffffff"/>
+  <rect x="61" y="25" width="14" height="45" rx="4" fill="#9ca3af"/>
 </svg>

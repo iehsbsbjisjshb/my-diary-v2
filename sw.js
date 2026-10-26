@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diary-v2-v18';
+const CACHE_NAME = 'diary-v2-v35';
 
 const STATIC_ASSETS = [
   './',
@@ -13,10 +13,14 @@ const STATIC_ASSETS = [
   './ui/school.js',
   './ui/notes.js',
   './ui/settings.js',
+  './ui/datepicker.js',
   './manifest.json',
+  './1.svg',
   './icon-192.svg',
   './icon-512.svg'
 ];
+
+const PRECACHE_ASSETS = STATIC_ASSETS;
 
 // Установка: прекэширование всех статических файлов и немедленный переход к активации
 self.addEventListener('install', (event) => {

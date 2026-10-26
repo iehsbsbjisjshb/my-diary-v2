@@ -80,7 +80,9 @@ export function renderCurrentRoute() {
       console.error(`Ошибка при отображении раздела ${routeKey}:`, err);
       container.innerHTML = `
         <div class="route-error-box" style="padding: 2.5rem 1.5rem; text-align: center;">
-          <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">⚠️</div>
+          <div style="margin-bottom: 0.75rem; color: #ef4444; display: flex; justify-content: center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
           <h3 style="color: #ef4444; margin-bottom: 0.5rem; font-size: 1.15rem;">Ошибка при отображении раздела</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; max-width: 480px; margin-left: auto; margin-right: auto;">${escapeHtml(err.message || 'Неизвестная ошибка')}</p>
           <button type="button" class="btn btn-accent btn-sm" onclick="window.location.reload()">Перезагрузить страницу</button>
