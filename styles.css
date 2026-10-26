@@ -37,7 +37,7 @@
 html,
 body {
   scroll-behavior: smooth;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -112,10 +112,7 @@ body {
   -webkit-backface-visibility: hidden;
 }
 
-/* Native-feel touch scrolling for all scrollable containers */
-.app-content,
-.app-layout,
-.app-sidebar,
+/* Native-feel touch scrolling for scrollable containers */
 .modal-backdrop,
 .modal-card,
 .week-grid-container,
@@ -2580,12 +2577,53 @@ input[type="checkbox"]:checked {
 }
 
 @media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden;
-    width: 100%;
-    scroll-behavior: smooth;
-    overscroll-behavior-y: none;
+  body, html {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    height: auto !important;
+    min-height: 100vh;
+    padding-bottom: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    height: auto !important;
+    width: 100%;
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+  }
+
+  .app-main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: auto !important;
+    height: auto !important;
+    flex: 1 0 auto;
+    overflow: visible !important;
+  }
+
+  .app-content,
+  main#app {
+    height: auto !important;
+    min-height: calc(100vh - 60px) !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    padding: 0.75rem 0.6rem calc(60px + env(safe-area-inset-bottom, 0px) + 32px) 0.6rem !important;
+    box-sizing: border-box;
+    flex: 1 0 auto;
   }
 
   /* Flatpickr on mobile: solid crisp background, no CPU/GPU blur strain */
@@ -2646,21 +2684,14 @@ input[type="checkbox"]:checked {
     -webkit-transform: translateZ(0);
   }
 
-  body {
-    padding-bottom: calc(60px + 12px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .app-layout {
-    flex-direction: column;
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-  }
-
   .sidebar-header {
     display: none;
   }
 
   .app-sidebar {
     display: contents;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .mobile-header {
@@ -2748,8 +2779,9 @@ input[type="checkbox"]:checked {
   }
 /* Адаптив блоков под ширину 360px */
   .app-content {
-    padding: 0.75rem 0.6rem;
-    overflow-x: hidden;
+    padding: 0.75rem 0.6rem calc(60px + env(safe-area-inset-bottom, 0px) + 32px) 0.6rem !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
   }
 
   .overdue-item {

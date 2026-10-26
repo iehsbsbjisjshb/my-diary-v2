@@ -60,6 +60,7 @@ export function renderCurrentRoute() {
   }
 
   updateNavActive(hash);
+  document.body.classList.remove('modal-open');
 
   const container = getAppContainer();
   if (container && typeof screen.render === 'function') {
