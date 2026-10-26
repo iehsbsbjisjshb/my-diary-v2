@@ -582,6 +582,15 @@ function attachEventListeners(container, state, meta) {
   });
 
   if (activeTab === 'schedule') {
+    // Автопрокрутка к сегодняшнему дню в горизонтальной ленте на мобильных
+    const todayCol = container.querySelector('.schedule-day-col.day-today');
+    const grid = container.querySelector('.schedule-week-grid');
+    if (todayCol && grid && window.innerWidth <= 768) {
+      setTimeout(() => {
+        grid.scrollTo({ left: Math.max(0, todayCol.offsetLeft - 16), behavior: 'smooth' });
+      }, 60);
+    }
+
     // Кастомный календарь flatpickr для оверрайда
     setupDatePicker(container.querySelectorAll('#override-date-input'));
 

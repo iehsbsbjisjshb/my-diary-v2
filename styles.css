@@ -2139,7 +2139,31 @@ input[type="checkbox"]:checked {
 
 @media (max-width: 900px) {
   .schedule-week-grid {
-    grid-template-columns: 1fr;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 12px !important;
+    padding-bottom: 16px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .schedule-week-grid::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .schedule-day-col {
+    min-width: 280px !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
   }
 }
 
@@ -2876,6 +2900,77 @@ input[type="checkbox"]:checked {
 
   .hw-reschedule-box .btn {
     width: 100%;
+  }
+
+  /* Horizontal swipe tape for School screen on mobile */
+  .schedule-week-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 12px !important;
+    padding-bottom: 16px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important; /* Firefox */
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .schedule-week-grid::-webkit-scrollbar {
+    display: none !important; /* Chrome / Safari */
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* Each day column in School tape: ~85vw so next day edge is visible */
+  .schedule-day-col {
+    min-width: 280px !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Week navigation bar on mobile (100% full-width, clean layout) */
+  .week-toolbar {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .week-nav-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .week-title-range {
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 0 2px !important;
+  }
+
+  .week-toolbar-actions {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .week-toolbar-actions .btn-today {
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    height: 30px !important;
+    min-height: 30px !important;
   }
 }
 
