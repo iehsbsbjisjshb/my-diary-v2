@@ -1041,6 +1041,84 @@ input[type="checkbox"]:checked {
   background: #2563eb;
 }
 
+.chinese-goal-line {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.chinese-goal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 3px 9px;
+  border-radius: 6px;
+  line-height: 1.3;
+}
+
+.today-learned-groups {
+  font-size: 0.82rem;
+  color: #4b5563;
+  margin-top: 6px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.today-learned-groups strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.today-words-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.badge-word-group {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.quick-group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.btn-group-chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-group-chip:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
 /* 3. Блок «Просрочено» */
 .overdue-section {
   background-color: #fef2f2;
@@ -1218,6 +1296,22 @@ input[type="checkbox"]:checked {
   color: #3b82f6;
   min-width: 48px;
   text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.task-overdue-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  vertical-align: -2px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.task-overdue-alert svg {
+  display: block;
 }
 
 .timeline-body {

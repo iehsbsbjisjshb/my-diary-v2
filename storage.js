@@ -91,13 +91,17 @@ export const DEFAULT_STATE = {
   homework: [],
   notes: [],
   chinese: {
-    dailyGoalMinutes: 60,
+    dailyGoalMinutes: 30,
+    currentDailyGoal: 30,
+    lastGoalDate: null,
+    maxGoalReached: false,
     wordsLearned: 0,
-    wordsTarget: 1200,
+    wordsTarget: 3245,
     totalMinutes: 0,
     streak: 0,
     lastStudyDate: null,
-    history: {}
+    history: {},
+    groups: []
   },
   schedule: {
     base: JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT)),
@@ -112,6 +116,92 @@ export const DEFAULT_STATE = {
 };
 
 const listeners = new Set();
+
+export function updateDynamicDailyGoal(chinese, history = {}) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const todayISO = `${year}-${month}-${day}`;
+
+  let currentGoal = parseInt(chinese?.currentDailyGoal, 10);
+  if (!Number.isFinite(currentGoal) || currentGoal <= 0) {
+    currentGoal = parseInt(chinese?.dailyGoalMinutes, 10) || 30;
+  }
+
+  let lastGoalDate = chinese?.lastGoalDate;
+  let maxGoalReached = Boolean(chinese?.maxGoalReached || currentGoal >= 120);
+
+  // Если динамическая цель ещё не инициализировалась датой
+  if (!lastGoalDate) {
+    return {
+      ...(chinese || {}),
+      currentDailyGoal: currentGoal,
+      dailyGoalMinutes: currentGoal,
+      lastGoalDate: todayISO,
+      maxGoalReached
+    };
+  }
+
+  if (lastGoalDate === todayISO) {
+    return {
+      ...(chinese || {}),
+      currentDailyGoal: currentGoal,
+      dailyGoalMinutes: currentGoal,
+      lastGoalDate: todayISO,
+      maxGoalReached
+    };
+  }
+
+  const parseISO = (str) => {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+  const formatISO = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  let curDate = parseISO(lastGoalDate);
+  const targetDate = parseISO(todayISO);
+
+  let daysCount = 0;
+  while (curDate < targetDate && daysCount < 365) {
+    const curISO = formatISO(curDate);
+    const studiedMinutes = (history && history[curISO]) || 0;
+
+    if (studiedMinutes >= currentGoal) {
+      if (maxGoalReached || currentGoal >= 120) {
+        maxGoalReached = true;
+        // Колеблется: каждый день рандомно от 90 до 120 минут
+        currentGoal = Math.floor(Math.random() * ((120 - 90) / 5 + 1)) * 5 + 90;
+      } else {
+        currentGoal = Math.min(120, currentGoal + 5);
+        if (currentGoal >= 120) {
+          maxGoalReached = true;
+        }
+      }
+    } else if (studiedMinutes === 0) {
+      currentGoal = Math.max(15, currentGoal - 10);
+      if (currentGoal < 90) {
+        maxGoalReached = false;
+      }
+    }
+
+    curDate.setDate(curDate.getDate() + 1);
+    daysCount++;
+  }
+
+  return {
+    ...(chinese || {}),
+    currentDailyGoal: currentGoal,
+    dailyGoalMinutes: currentGoal,
+    lastGoalDate: todayISO,
+    maxGoalReached
+  };
+}
 
 export function getState() {
   try {
@@ -158,19 +248,54 @@ export function getState() {
       base['7'] = [];
     }
 
+    const rawChinese = (parsed.chinese && typeof parsed.chinese === 'object') ? parsed.chinese : {};
+    const effectiveChinese = {
+      ...DEFAULT_STATE.chinese,
+      ...rawChinese,
+      groups: Array.isArray(rawChinese.groups) ? rawChinese.groups : [],
+      wordsTarget: (rawChinese.wordsTarget === 1200 || !rawChinese.wordsTarget) ? 3245 : rawChinese.wordsTarget,
+      currentDailyGoal: rawChinese.currentDailyGoal || rawChinese.dailyGoalMinutes || 30
+    };
+    const updatedChinese = updateDynamicDailyGoal(effectiveChinese, effectiveChinese.history || {});
+
+    // Синхронизируем обратно в localStorage при изменении цели/даты или миграции
+    let needsPersist = false;
+    if (parsed.words !== undefined) {
+      delete parsed.words;
+      needsPersist = true;
+    }
+    if (
+      updatedChinese.lastGoalDate !== rawChinese.lastGoalDate ||
+      updatedChinese.currentDailyGoal !== rawChinese.currentDailyGoal ||
+      rawChinese.wordsTarget === 1200 ||
+      !Array.isArray(rawChinese.groups)
+    ) {
+      needsPersist = true;
+    }
+
+    if (needsPersist) {
+      try {
+        const toSave = {
+          ...parsed,
+          chinese: updatedChinese
+        };
+        delete toSave.words;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      } catch (e) {}
+    }
+
+    const { words: _legacyWords, ...cleanParsed } = parsed;
+
     return {
       ...DEFAULT_STATE,
-      ...parsed,
+      ...cleanParsed,
       updatedAt: parsed.updatedAt || new Date().toISOString(),
       goals: Array.isArray(parsed.goals) ? parsed.goals : DEFAULT_STATE.goals,
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       homework: Array.isArray(parsed.homework) ? parsed.homework : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       reviews: Array.isArray(parsed.reviews) ? parsed.reviews : [],
-      chinese: {
-        ...DEFAULT_STATE.chinese,
-        ...(parsed.chinese && typeof parsed.chinese === 'object' ? parsed.chinese : {})
-      },
+      chinese: updatedChinese,
       schedule: {
         ...DEFAULT_STATE.schedule,
         ...(parsed.schedule && typeof parsed.schedule === 'object' ? parsed.schedule : {}),
@@ -247,7 +372,7 @@ export function onStateChange(fn) {
 
 // Доступ из глобальной области для отладки в консоли
 if (typeof window !== 'undefined') {
-  window.storage = { getState, setState, resetState, onStateChange, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
+  window.storage = { getState, setState, resetState, onStateChange, updateDynamicDailyGoal, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
   window.getState = getState;
   window.setState = setState;
   window.resetState = resetState;

@@ -92,6 +92,10 @@ export function render(container, state) {
   const yesterdayISO = formatDateISO(addDays(now, -1));
   const tomorrowISO = formatDateISO(addDays(now, 1));
   const isEvening = now.getHours() >= 20;
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const isEveningAlertTime = currentHour >= 19 && currentHour <= 23;
+  const currentHHMM = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
   let displayDayTitle = 'Распорядок';
   if (isViewingToday) {
@@ -107,9 +111,10 @@ export function render(container, state) {
   // 1. Цели и китайский
   const goals = state.goals || [];
   const chinese = state.chinese || {
-    dailyGoalMinutes: 60,
+    dailyGoalMinutes: 30,
+    currentDailyGoal: 30,
     wordsLearned: 0,
-    wordsTarget: 1200,
+    wordsTarget: 3245,
     totalMinutes: 0,
     streak: 0,
     lastStudyDate: null,
@@ -118,8 +123,8 @@ export function render(container, state) {
 
   const todayMinutes = (chinese.history && chinese.history[todayISO]) || 0;
   const selectedDayMinutes = (chinese.history && chinese.history[selectedDateISO]) || 0;
-  const dailyGoal = chinese.dailyGoalMinutes || 60;
-  const minutesPercent = Math.min(100, Math.round((todayMinutes / dailyGoal) * 100));
+  const currentDailyGoal = chinese.currentDailyGoal || chinese.dailyGoalMinutes || 30;
+  const minutesPercent = Math.min(100, Math.round((todayMinutes / currentDailyGoal) * 100));
 
   let currentStreak = 0;
   if (chinese.lastStudyDate === todayISO || chinese.lastStudyDate === yesterdayISO) {
@@ -127,8 +132,16 @@ export function render(container, state) {
   }
 
   const wordsLearned = chinese.wordsLearned || 0;
-  const wordsTarget = chinese.wordsTarget || 0;
+  const wordsTarget = chinese.wordsTarget || 3245;
   const wordsPercent = wordsTarget > 0 ? Math.min(100, Math.round((wordsLearned / wordsTarget) * 100)) : 0;
+
+  // Выученные за сегодня группы слов
+  const allGroups = chinese.groups || [];
+  const targetDateForGroups = isViewingToday ? todayISO : selectedDateISO;
+  const groupsForDay = allGroups.filter((g) => g && g.date === targetDateForGroups);
+  const todayGroupsText = groupsForDay
+    .map((g) => `${g.name} (${g.wordCount} ${getPluralWords(g.wordCount)})`)
+    .join(', ');
 
   // 2. Просроченные задачи и домашка
   const overdueTasks = (state.tasks || []).filter((t) => t && t.date && t.date < todayISO && !t.done);
@@ -226,8 +239,11 @@ export function render(container, state) {
           </div>
 
           <div class="progress-block">
+            <div class="chinese-goal-line">
+              <span class="chinese-goal-tag">Цель на сегодня: <strong>${currentDailyGoal} мин</strong></span>
+            </div>
             <div class="progress-labels">
-              <span>Китайский сегодня: <strong>${todayMinutes} / ${dailyGoal} мин</strong></span>
+              <span>Китайский сегодня: <strong>${todayMinutes} / ${currentDailyGoal} мин</strong></span>
               <span>${minutesPercent}%</span>
             </div>
             <div class="progress-bar-track">
@@ -241,11 +257,19 @@ export function render(container, state) {
             <div class="words-block">
               <div class="words-info">
                 <span>Слов: <strong>${wordsLearned} / ${wordsTarget}</strong> (${wordsPercent}%)</span>
-                
               </div>
               <div class="progress-bar-track track-words">
                 <div class="progress-bar-fill fill-words" style="width: ${wordsPercent}%"></div>
               </div>
+              ${
+                todayGroupsText
+                  ? `
+                <div class="today-learned-groups">
+                  Сегодня: <strong>${escapeHtml(todayGroupsText)}</strong>
+                </div>
+                `
+                  : ''
+              }
             </div>
             `
               : ''
@@ -346,7 +370,7 @@ export function render(container, state) {
             : `
             <div class="timeline-list">
               ${activeItems
-                .map((item) => renderTimelineCard(item))
+                .map((item) => renderTimelineCard(item, { isEveningAlertTime, currentHHMM, isViewingToday }))
                 .join('')}
             </div>
 
@@ -356,7 +380,7 @@ export function render(container, state) {
                 <details class="completed-details" id="details-today-completed" ${isCompletedTasksOpen ? 'open' : ''}>
                   <summary class="completed-summary">Показать выполненные (${completedItems.length})</summary>
                   <div class="timeline-list timeline-completed-list">
-                    ${completedItems.map((item) => renderTimelineCard(item)).join('')}
+                    ${completedItems.map((item) => renderTimelineCard(item, { isEveningAlertTime, currentHHMM, isViewingToday })).join('')}
                   </div>
                 </details>
                 `
@@ -448,7 +472,17 @@ export function render(container, state) {
                     <button type="button" class="btn-words-chip" data-words="10">+10 слов</button>
                     <button type="button" class="btn-words-chip" data-words="20">+20 слов</button>
                   </div>
-                  <p class="modal-hint">При вводе слов автоматически создадутся задачи на повторение на завтра (+1), через 3 и через 7 дней.</p>
+                </div>
+
+                <div class="modal-field-group" style="margin-top: 10px;">
+                  <label class="form-label" for="input-study-group">Тема/Группа</label>
+                  <input 
+                    type="text" 
+                    class="form-input modal-input" 
+                    id="input-study-group" 
+                    placeholder="например: Г-1, Урок 5, Глаголы движения" 
+                  />
+                  <p class="modal-hint">Группа сохранится в памяти, и для неё автоматически создадутся задачи на повторение (завтра, +3 дня, +7 дней).</p>
                 </div>
 
                 <div class="modal-actions" style="margin-top: 16px;">
@@ -471,20 +505,56 @@ export function render(container, state) {
   attachEventListeners(container, state, { todayISO, selectedDateISO, isViewingToday, yesterdayISO, tomorrowISO, todayDoneCount });
 }
 
-function renderTimelineCard(item) {
+function renderTimelineCard(item, meta = null) {
   const cat = CATEGORIES[item.category] || CATEGORIES.personal;
   const isHomework = item.itemType === 'homework';
   const isRepetition = item.category === 'chinese' && (item.title || '').toLowerCase().includes('повторить');
 
+  const durationNum = parseInt(item.duration, 10);
+  const hasDuration = Number.isFinite(durationNum) && durationNum > 0;
+  const durationText = hasDuration ? `(${durationNum} мин)` : '';
+
+  let timeDisplay = '—';
+  if (item.time && durationText) {
+    timeDisplay = `${escapeHtml(item.time)} ${durationText}`;
+  } else if (item.time) {
+    timeDisplay = escapeHtml(item.time);
+  } else if (durationText) {
+    timeDisplay = durationText;
+  }
+
+  let isEveningAlertTime = false;
+  let currentHHMM = '';
+  let isViewingToday = false;
+
+  if (meta) {
+    isEveningAlertTime = Boolean(meta.isEveningAlertTime);
+    currentHHMM = meta.currentHHMM || '';
+    isViewingToday = Boolean(meta.isViewingToday);
+  } else {
+    const now = new Date();
+    const ch = now.getHours();
+    isEveningAlertTime = ch >= 19 && ch <= 23;
+    currentHHMM = `${String(ch).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    isViewingToday = formatDateISO(selectedDate) === formatDateISO(now);
+  }
+
+  const isTimePassed = !item.time || item.time <= currentHHMM;
+  const isOverdueWarning = isViewingToday && !item.done && isEveningAlertTime && isTimePassed;
+
   return `
     <div class="timeline-card ${item.done ? 'timeline-card-done' : ''} ${isRepetition ? 'timeline-card-repetition' : ''}">
-      <div class="timeline-time">${escapeHtml(item.time || '—')}</div>
+      <div class="timeline-time">${timeDisplay}</div>
       <div class="timeline-body ${!isHomework ? 'timeline-body-clickable' : ''}" data-task-id="${item.id}">
         <label class="task-checkbox-label" title="Отметить выполненной">
           <input type="checkbox" class="today-item-checkbox" data-id="${item.id}" data-type="${item.itemType}" ${item.done ? 'checked' : ''} />
         </label>
         <span class="timeline-title ${item.done ? 'title-done' : ''}">
-          ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span> ' : ''}${escapeHtml(item.title)}
+          ${
+            isOverdueWarning
+              ? '<span class="task-overdue-alert" title="Внимание: вечер, а задача еще не выполнена!"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon alert-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> '
+              : ''
+          }${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span> ' : ''}${escapeHtml(item.title)}
         </span>
         ${
           isRepetition
@@ -876,7 +946,7 @@ function attachEventListeners(container, state, meta) {
   if (inputMinutes && btnSubStudy) {
     inputMinutes.addEventListener('input', () => {
       const v = parseInt(inputMinutes.value, 10);
-      btnSubStudy.disabled = isNaN(v) || v <= 0;
+      btnSubStudy.disabled = isNaN(v) || v < 0;
     });
   }
 
@@ -885,11 +955,26 @@ function attachEventListeners(container, state, meta) {
     e.preventDefault();
     const minutesInput = container.querySelector('#input-study-minutes');
     const wordsInput = container.querySelector('#input-study-words');
+    const groupInput = container.querySelector('#input-study-group');
 
-    const minutes = parseInt(minutesInput.value, 10);
-    if (!minutes || minutes <= 0) return;
+    const minutes = minutesInput?.value ? parseInt(minutesInput.value, 10) : 0;
+    let wordsCount = wordsInput?.value ? parseInt(wordsInput.value, 10) : 0;
+    if (isNaN(wordsCount) || wordsCount < 0) wordsCount = 0;
 
-    const words = wordsInput.value ? parseInt(wordsInput.value, 10) : 0;
+    const groupName = (groupInput?.value || '').trim();
+
+    // Если введены слова, но поле группы пустое — ошибка
+    if (wordsCount > 0 && !groupName) {
+      showToast('Укажите название группы (например, Г-1)', { type: 'error' });
+      groupInput?.focus();
+      return;
+    }
+
+    if (minutes <= 0 && wordsCount <= 0) {
+      showToast('Укажите время занятия или количество слов', { type: 'error' });
+      return;
+    }
+
     activeModal = null;
 
     setState((prev) => {
@@ -899,7 +984,7 @@ function attachEventListeners(container, state, meta) {
       history[todayISO] = currentTodayMinutes + minutes;
 
       let newStreak = chinese.streak || 0;
-      if (chinese.lastStudyDate !== todayISO) {
+      if (minutes > 0 && chinese.lastStudyDate !== todayISO) {
         if (chinese.lastStudyDate === yesterdayISO) {
           newStreak += 1;
         } else {
@@ -907,15 +992,22 @@ function attachEventListeners(container, state, meta) {
         }
       }
 
+      const existingGroups = Array.isArray(chinese.groups) ? [...chinese.groups] : [];
       let updatedTasks = [...(prev.tasks || [])];
-      if (words > 0) {
+
+      // Сохраняем группу и создаем задачи на повторение только если wordsCount > 0
+      if (wordsCount > 0) {
+        const newGroup = {
+          id: 'grp_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+          name: groupName,
+          wordCount: wordsCount,
+          date: todayISO
+        };
+        existingGroups.push(newGroup);
+
         const nowObj = new Date();
-        const dayStr = String(nowObj.getDate()).padStart(2, '0');
-        const monthStr = String(nowObj.getMonth() + 1).padStart(2, '0');
-        const noteDateStr = `${dayStr}.${monthStr}`;
-        const wordDecl = getPluralWords(words);
-        const taskTitle = `Китайский: повторить ${words} ${wordDecl}`;
-        const taskNote = `Выучены ${noteDateStr}`;
+        const wordDecl = getPluralWords(wordsCount);
+        const taskTitle = `Повторить группу ${groupName} (${wordsCount} ${wordDecl})`;
 
         const repetitionOffsets = [1, 3, 7];
         const newRepetitionTasks = repetitionOffsets.map((offsetDays) => {
@@ -928,7 +1020,7 @@ function attachEventListeners(container, state, meta) {
             time: '',
             duration: 15,
             done: false,
-            note: taskNote
+            note: `Группа ${groupName}`
           };
         });
 
@@ -939,17 +1031,23 @@ function attachEventListeners(container, state, meta) {
         ...prev,
         chinese: {
           ...chinese,
+          groups: existingGroups,
           totalMinutes: (chinese.totalMinutes || 0) + minutes,
-          wordsLearned: (chinese.wordsLearned || 0) + (words > 0 ? words : 0),
+          wordsLearned: (chinese.wordsLearned || 0) + wordsCount,
           streak: newStreak,
-          lastStudyDate: todayISO,
+          lastStudyDate: minutes > 0 ? todayISO : chinese.lastStudyDate,
           history
         },
         tasks: updatedTasks
       };
     });
 
-    showToast(words > 0 ? 'Занятие сохранено! Создано 3 задачи на повторение' : 'Занятие сохранено', { type: 'success' });
+    showToast(
+      wordsCount > 0
+        ? `Занятие сохранено! Добавлена группа «${groupName}»`
+        : 'Занятие сохранено',
+      { type: 'success' }
+    );
   });
 
   // Чекбоксы таймлайна

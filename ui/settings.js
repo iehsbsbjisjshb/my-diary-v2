@@ -104,13 +104,13 @@ export function render(container, state) {
 
           <form class="settings-form" id="form-chinese-settings">
             <div class="settings-row">
-              <label class="settings-label" for="setting-daily-minutes">Ежедневная цель занятий (dailyGoalMinutes):</label>
-              <input type="number" class="form-input settings-input" id="setting-daily-minutes" min="5" max="360" step="5" value="${chinese.dailyGoalMinutes ?? 60}" required />
+              <label class="settings-label" for="setting-daily-minutes">Текущая динамическая цель (currentDailyGoal):</label>
+              <input type="number" class="form-input settings-input" id="setting-daily-minutes" min="15" max="120" step="5" value="${chinese.currentDailyGoal ?? chinese.dailyGoalMinutes ?? 30}" required />
             </div>
 
             <div class="settings-row">
               <label class="settings-label" for="setting-words-target">Целевое количество слов (wordsTarget):</label>
-              <input type="number" class="form-input settings-input" id="setting-words-target" min="0" max="10000" step="10" value="${chinese.wordsTarget ?? 1200}" required />
+              <input type="number" class="form-input settings-input" id="setting-words-target" min="0" max="10000" step="10" value="${chinese.wordsTarget ?? 3245}" required />
             </div>
 
             <div class="settings-row">
@@ -402,8 +402,10 @@ function attachEventListeners(container, state) {
       ...prev,
       chinese: {
         ...(prev.chinese || {}),
-        dailyGoalMinutes: isNaN(dailyGoalMinutes) ? 60 : dailyGoalMinutes,
-        wordsTarget: isNaN(wordsTarget) ? 1200 : wordsTarget,
+        dailyGoalMinutes: isNaN(dailyGoalMinutes) ? 30 : Math.min(120, Math.max(15, dailyGoalMinutes)),
+        currentDailyGoal: isNaN(dailyGoalMinutes) ? 30 : Math.min(120, Math.max(15, dailyGoalMinutes)),
+        maxGoalReached: !isNaN(dailyGoalMinutes) && dailyGoalMinutes >= 120,
+        wordsTarget: isNaN(wordsTarget) ? 3245 : wordsTarget,
         wordsLearned: isNaN(wordsLearned) ? 0 : wordsLearned
       }
     }));

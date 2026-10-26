@@ -212,9 +212,12 @@ export function render(container, state) {
 function renderTaskCardHtml(task) {
   const cat = CATEGORIES[task.category] || CATEGORIES.personal;
   const isRepetition = task.category === 'chinese' && (task.title || '').toLowerCase().includes('повторить');
+  const durationNum = parseInt(task.duration, 10);
+  const hasDuration = Number.isFinite(durationNum) && durationNum > 0;
+  const durationText = hasDuration ? `(${durationNum} мин)` : '';
   const timeLabel = task.time
-    ? `${escapeHtml(task.time)}${task.duration && task.duration > 0 ? ` (${task.duration} мин)` : ''}`
-    : (task.duration && task.duration > 0 ? `${task.duration} мин` : '');
+    ? `${escapeHtml(task.time)}${durationText ? ` ${durationText}` : ''}`
+    : durationText;
 
   return `
     <div class="task-card ${task.done ? 'task-done' : ''} ${isRepetition ? 'task-card-repetition' : ''}" 
