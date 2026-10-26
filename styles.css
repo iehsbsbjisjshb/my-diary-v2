@@ -2839,38 +2839,65 @@ button:disabled,
   pointer-events: none !important;
 }
 
-/* Универсальный тост-компонент (короткий, снизу) */
-.app-toast {
+/* Контейнер стека тостов (Sonner / Vercel стиль) */
+.app-toast-container {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  z-index: 2000;
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
-  padding: 0.6rem 0.9rem;
-  max-width: 420px;
-  animation: appToastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  width: 380px;
+  max-width: calc(100vw - 2rem);
+  height: 0;
+  z-index: 2500;
+  pointer-events: none;
+}
+
+.app-toast {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  pointer-events: auto;
+  background: rgba(24, 24, 32, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #f3f4f6);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 0.65rem 0.95rem;
+  transform-origin: bottom center;
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s ease,
+              border-color 0.28s ease;
+  will-change: transform, opacity;
+}
+
+.app-toast-container:hover .app-toast {
+  opacity: 1 !important;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-toast-entering {
+  opacity: 0 !important;
+  transform: translate3d(0, 18px, 0) scale(0.94) !important;
+  transition: none !important;
 }
 
 .app-toast-success {
-  border-color: #10b981;
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7), 0 0 16px rgba(16, 185, 129, 0.12);
 }
 
 .app-toast-error {
-  border-color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7), 0 0 16px rgba(239, 68, 68, 0.15);
 }
 
 .app-toast-info {
-  border-color: var(--accent-color);
-}
-
-.app-toast-hiding {
-  opacity: 0;
-  transform: translateY(12px);
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.7), 0 0 16px rgba(139, 92, 246, 0.14);
 }
 
 .app-toast-content {
@@ -2879,53 +2906,80 @@ button:disabled,
   gap: 0.75rem;
 }
 
+.app-toast-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
 .app-toast-text {
   font-size: 0.9rem;
   font-weight: 500;
+  line-height: 1.35;
+  color: #f3f4f6;
   flex: 1;
 }
 
 .app-toast-action {
   white-space: nowrap;
-  min-height: 38px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  min-height: 32px;
+  border-radius: 8px;
+  background-color: var(--accent-color, #8b5cf6);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.app-toast-action:hover {
+  background-color: var(--accent-hover, #7c3aed);
+}
+
+.app-toast-action:active {
+  transform: scale(0.96);
 }
 
 .app-toast-close {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-muted, #9ca3af);
   cursor: pointer;
-  min-width: 44px;
-  min-height: 44px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   border-radius: 6px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .app-toast-close:hover {
-  color: var(--text-main);
-  background-color: var(--surface-hover);
-}
-
-@keyframes appToastSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  color: var(--text-main, #ffffff);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 640px) {
-  .app-toast {
+  .app-toast-container {
     left: 1rem;
     right: 1rem;
     bottom: calc(60px + 12px + env(safe-area-inset-bottom, 0px));
+    width: auto;
     max-width: calc(100% - 2rem);
+  }
+  .app-toast {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
