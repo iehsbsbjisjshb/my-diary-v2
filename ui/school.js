@@ -122,6 +122,11 @@ export function render(container, state) {
 function renderScheduleTab(schedule, meta) {
   const { todayISO, monday } = meta;
 
+  const bellsMap = new Map();
+  (schedule.bells || []).forEach((b) => {
+    if (b && b.number) bellsMap.set(Number(b.number), b);
+  });
+
   // Формируем дни текущей недели
   const weekDays = [];
   for (let i = 0; i < 7; i++) {
