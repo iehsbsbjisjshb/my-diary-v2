@@ -155,10 +155,13 @@ export function render(container, state) {
           .map((day) => {
             const isAddingHere = activeNewTaskDay === day.iso;
             return `
-            <div class="day-col ${day.isToday ? 'day-today' : ''}" data-day-iso="${day.iso}">
+            <div class="day-col ${day.isToday ? 'day-today' : ''} ${isAddingHere ? 'day-col-has-form' : ''}" data-day-iso="${day.iso}">
               <div class="day-header">
                 <div class="day-header-info">
-                  <span class="day-weekday">${day.dayNameShort}</span>
+                  <div class="day-header-top">
+                    <span class="day-weekday">${day.dayNameShort}</span>
+                    ${day.isToday ? '<span class="day-today-tag">Сегодня</span>' : ''}
+                  </div>
                   <span class="day-date">${day.dayOfMonth} ${day.monthName}</span>
                 </div>
                 <button class="btn-add-task" data-day-iso="${day.iso}" title="Добавить задачу" aria-label="Добавить задачу">+</button>
@@ -247,44 +250,73 @@ function renderTaskFormHtml(fields) {
   const isTitleEmpty = !fields.title || !fields.title.trim();
   return `
     <form class="task-inline-form" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}" data-day-iso="${fields.date}">
-      <input type="text" class="form-input form-title-input" placeholder="Название задачи *" value="${escapeHtml(fields.title)}" required autofocus />
+      <div class="form-group">
+        <label class="form-label">Название задачи *</label>
+        <input 
+          type="text" 
+          class="form-input form-title-input" 
+          placeholder="Что нужно сделать?" 
+          value="${escapeHtml(fields.title)}" 
+          required 
+          autofocus 
+        />
+      </div>
       
-      <div class="form-row">
-        <div class="form-col">
+      <div class="form-row form-row-split">
+        <div class="form-group form-col-half">
           <label class="form-label">Дата</label>
-          <input type="date" class="form-input form-task-date-input" value="${fields.date}" required />
+          <input 
+            type="date" 
+            class="form-input form-task-date-input" 
+            value="${fields.date}" 
+            required 
+          />
         </div>
-        <div class="form-col">
+        <div class="form-group form-col-half">
           <label class="form-label">Время</label>
-          <input type="time" class="form-input form-time-input" value="${escapeHtml(fields.time || '')}" />
-        </div>
-        <div class="form-col">
-          <label class="form-label">Мин</label>
-          <input type="number" class="form-input form-duration-input" placeholder="30" min="0" step="5" value="${fields.duration || ''}" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-col form-col-full">
-          <label class="form-label">Категория</label>
-          <select class="form-input form-category-select">
-            <option value="chinese" ${fields.category === 'chinese' ? 'selected' : ''}>Китайский</option>
-            <option value="homework" ${fields.category === 'homework' ? 'selected' : ''}>Домашка</option>
-            <option value="school" ${fields.category === 'school' ? 'selected' : ''}>Школа</option>
-            <option value="personal" ${fields.category === 'personal' || !fields.category ? 'selected' : ''}>Личное</option>
-          </select>
+          <input 
+            type="time" 
+            class="form-input form-time-input" 
+            value="${escapeHtml(fields.time || '')}" 
+          />
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-col form-col-full">
-          <input type="text" class="form-input form-note-input" placeholder="Заметка (опционально)" value="${escapeHtml(fields.note || '')}" />
-        </div>
+      <div class="form-group">
+        <label class="form-label">Длительность (минут)</label>
+        <input 
+          type="number" 
+          class="form-input form-duration-input" 
+          placeholder="например, 30" 
+          min="0" 
+          step="5" 
+          value="${fields.duration || ''}" 
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Категория</label>
+        <select class="form-input form-category-select">
+          <option value="chinese" ${fields.category === 'chinese' ? 'selected' : ''}>Китайский</option>
+          <option value="homework" ${fields.category === 'homework' ? 'selected' : ''}>Домашка</option>
+          <option value="school" ${fields.category === 'school' ? 'selected' : ''}>Школа</option>
+          <option value="personal" ${fields.category === 'personal' || !fields.category ? 'selected' : ''}>Личное</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Заметка</label>
+        <input 
+          type="text" 
+          class="form-input form-note-input" 
+          placeholder="Детали или ссылка (опционально)" 
+          value="${escapeHtml(fields.note || '')}" 
+        />
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-accent btn-sm btn-save-task" ${isTitleEmpty ? 'disabled' : ''}>Сохранить</button>
-        <button type="button" class="btn btn-secondary btn-sm btn-form-cancel">Отмена</button>
+        <button type="submit" class="btn btn-accent btn-save-task" ${isTitleEmpty ? 'disabled' : ''}>Сохранить</button>
+        <button type="button" class="btn btn-ghost btn-form-cancel">Отмена</button>
       </div>
     </form>
   `;
