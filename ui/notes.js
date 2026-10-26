@@ -87,6 +87,7 @@ export function render(container, state) {
     </div>
   `;
 
+  document.body.classList.toggle('modal-open', Boolean(activeNoteModal));
   attachEventListeners(container, state);
 }
 

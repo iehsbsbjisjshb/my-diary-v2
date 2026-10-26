@@ -59,16 +59,14 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .page-fade-in {
-  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fadeIn 0.18s ease-out;
 }
 
 /* ==========================================================================
@@ -171,6 +169,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100vh;
+  width: 100%;
 }
 
 .mobile-header {
@@ -183,6 +183,7 @@ body {
   padding: 24px 20px;
   margin: 0 auto;
   box-sizing: border-box;
+  flex: 1;
 }
 
 .week-toolbar-actions {
@@ -1314,6 +1315,12 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
   background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -1322,7 +1329,8 @@ body {
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
-  animation: fadeIn 0.18s ease-out;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modal-card {
@@ -3231,4 +3239,8 @@ button:disabled,
   flex-direction: column;
   gap: 14px;
   width: 100%;
+}
+
+body.modal-open {
+  overflow: hidden;
 }

@@ -205,6 +205,7 @@ export function render(container, state) {
     </div>
   `;
 
+  document.body.classList.toggle('modal-open', Boolean(activeModalTask));
   attachEventListeners(container, state, { todayISO, days });
 }
 

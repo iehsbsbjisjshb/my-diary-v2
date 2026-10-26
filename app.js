@@ -54,6 +54,9 @@ function renderCurrentRoute() {
     container.classList.remove('page-fade-in');
     void container.offsetWidth; // Force reflow
     container.classList.add('page-fade-in');
+    container.addEventListener('animationend', () => {
+      container.classList.remove('page-fade-in');
+    }, { once: true });
 
     screen.render(container, getState());
   }
