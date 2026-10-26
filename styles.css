@@ -3269,78 +3269,55 @@ body.modal-open {
 
 
 /* ==========================================================================
-   Навигация по дням в экране «Распорядок»
+   Шапка дня в «Распорядок» (в точном соответствии с референсом)
    ========================================================================== */
-.timeline-title-row {
+.timeline-header {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.day-nav-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-bottom: 16px;
 }
 
-.btn-day-nav {
-  min-width: 32px !important;
-  min-height: 32px !important;
-  width: 32px;
-  height: 32px;
-  padding: 0 !important;
-  font-size: 1rem !important;
-  border-radius: 8px !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-main) !important;
+.timeline-header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.schedule-day-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.schedule-day-subtitle-label {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-day-nav:hover {
-  background-color: var(--surface-hover) !important;
-  border-color: #8b5cf6 !important;
-  color: #ffffff !important;
-}
-
-.day-picker-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 5px 12px;
-  cursor: pointer;
   position: relative;
-  transition: all 0.15s ease;
+  cursor: pointer;
+  margin: 0;
+}
+
+.schedule-day-subtitle {
+  font-size: 0.95rem;
+  color: #9ca3af;
+  font-weight: 400;
+  transition: color 0.15s ease;
   user-select: none;
 }
 
-.day-picker-label:hover {
-  background-color: var(--surface-hover);
-  border-color: #8b5cf6;
+.schedule-day-subtitle-label:hover .schedule-day-subtitle {
+  color: #c4b5fd;
+  text-decoration: underline dotted;
 }
 
-.day-nav-date-text {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #f3f4f6;
-  text-transform: capitalize;
-}
-
-.day-picker-calendar-icon {
-  font-size: 0.95rem;
-  line-height: 1;
-}
-
-.day-picker-input {
+.schedule-hidden-date-input {
   position: absolute;
   top: 0;
   left: 0;
@@ -3351,9 +3328,62 @@ body.modal-open {
   z-index: 2;
 }
 
-.btn-day-today {
-  min-height: 32px !important;
-  padding: 0 12px !important;
-  font-size: 0.82rem !important;
+.schedule-day-nav-arrows {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-schedule-arrow {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  background-color: #141419;
+  border: 1px solid #2a2a35;
+  color: #9ca3af;
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-schedule-arrow:hover {
+  background-color: #1c1c24;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.btn-schedule-today {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 0.85rem;
   font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-schedule-today:hover {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.btn-schedule-add {
+  margin-top: 4px;
 }
