@@ -58,6 +58,27 @@ export const SCHEDULE_10R_DEFAULT = {
   '7': []
 };
 
+export const DEFAULT_BELLS_WEEKDAY = [
+  { number: 1, start: '08:00', end: '08:40' },
+  { number: 2, start: '08:50', end: '09:30' },
+  { number: 3, start: '09:45', end: '10:25' },
+  { number: 4, start: '10:40', end: '11:20' },
+  { number: 5, start: '11:35', end: '12:15' },
+  { number: 6, start: '12:25', end: '13:05' },
+  { number: 7, start: '13:15', end: '13:55' },
+  { number: 8, start: '14:05', end: '14:45' }
+];
+
+export const DEFAULT_BELLS_SATURDAY = [
+  { number: 1, start: '08:00', end: '08:40' },
+  { number: 2, start: '08:50', end: '09:30' },
+  { number: 3, start: '09:40', end: '10:20' },
+  { number: 4, start: '10:30', end: '11:10' },
+  { number: 5, start: '11:20', end: '12:00' },
+  { number: 6, start: '12:10', end: '12:50' },
+  { number: 7, start: '13:00', end: '13:40' }
+];
+
 export const DEFAULT_STATE = {
   version: 2,
   updatedAt: new Date().toISOString(),
@@ -81,7 +102,8 @@ export const DEFAULT_STATE = {
   schedule: {
     base: JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT)),
     overrides: {},
-    bells: []
+    bells: JSON.parse(JSON.stringify(DEFAULT_BELLS_WEEKDAY)),
+    saturdayBells: JSON.parse(JSON.stringify(DEFAULT_BELLS_SATURDAY))
   },
   weekPlan: {
     plannedWeeks: []
@@ -154,7 +176,12 @@ export function getState() {
         ...(parsed.schedule && typeof parsed.schedule === 'object' ? parsed.schedule : {}),
         base,
         overrides: { ...(parsed.schedule?.overrides && typeof parsed.schedule.overrides === 'object' ? parsed.schedule.overrides : {}) },
-        bells: Array.isArray(parsed.schedule?.bells) ? parsed.schedule.bells : []
+        bells: (Array.isArray(parsed.schedule?.bells) && parsed.schedule.bells.length > 0)
+          ? parsed.schedule.bells
+          : JSON.parse(JSON.stringify(DEFAULT_BELLS_WEEKDAY)),
+        saturdayBells: (Array.isArray(parsed.schedule?.saturdayBells) && parsed.schedule.saturdayBells.length > 0)
+          ? parsed.schedule.saturdayBells
+          : JSON.parse(JSON.stringify(DEFAULT_BELLS_SATURDAY))
       },
       weekPlan: {
         ...DEFAULT_STATE.weekPlan,
@@ -220,7 +247,7 @@ export function onStateChange(fn) {
 
 // Доступ из глобальной области для отладки в консоли
 if (typeof window !== 'undefined') {
-  window.storage = { getState, setState, resetState, onStateChange, DEFAULT_STATE, SCHEDULE_10R_DEFAULT };
+  window.storage = { getState, setState, resetState, onStateChange, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
   window.getState = getState;
   window.setState = setState;
   window.resetState = resetState;

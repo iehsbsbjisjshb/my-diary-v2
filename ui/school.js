@@ -1,4 +1,4 @@
-import { getState, setState, SCHEDULE_10R_DEFAULT } from '../storage.js';
+import { getState, setState, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY } from '../storage.js';
 import { showToast } from '../toast.js';
 
 let activeTab = 'schedule'; // 'schedule' | 'homework'
@@ -122,12 +122,22 @@ export function render(container, state) {
 function renderScheduleTab(schedule, meta) {
   const { todayISO, monday } = meta;
 
-  const bellsMap = new Map();
-  (schedule.bells || []).forEach((b) => {
-    if (b && b.number) bellsMap.set(Number(b.number), b);
-  });
+  const weekBells = (Array.isArray(schedule.bells) && schedule.bells.length > 0)
+    ? schedule.bells
+    : DEFAULT_BELLS_WEEKDAY;
+  const satBells = (Array.isArray(schedule.saturdayBells) && schedule.saturdayBells.length > 0)
+    ? schedule.saturdayBells
+    : DEFAULT_BELLS_SATURDAY;
 
-  // Формируем дни текущей недели
+  function resolveBellTime(isSat, num) {
+    const list = isSat ? satBells : weekBells;
+    const b = list.find((item) => Number(item.number) === Number(num));
+    return b ? `${b.start}–${b.end}` : null;
+  }
+
+  const targetDateForOv = parseLocalDate(activeOverrideDate);
+  const isSatOv = targetDateForOv.getDay() === 6;
+
   const weekDays = [];
   for (let i = 0; i < 7; i++) {
     const d = addDays(monday, i);
@@ -138,6 +148,7 @@ function renderScheduleTab(schedule, meta) {
 
     weekDays.push({
       iso: dayISO,
+      dayIndex: i,
       dayKey,
       dayShort: DAYS_SHORT_RU[i],
       dayOfMonth: d.getDate(),
@@ -195,7 +206,7 @@ function renderScheduleTab(schedule, meta) {
                         (l, idx) => `
                     <div class="lesson-row">
                       <span class="lesson-num">${idx + 1}</span>
-                      <span class="lesson-time">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : '—'))}</span>
+                      <span class="lesson-time">${escapeHtml(l.time || (resolveBellTime(isSatOv, idx + 1) || '—'))}</span>
                       <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                       <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
                       <button class="btn-delete-lesson" data-delete-override-idx="${idx}" title="Удалить">✕</button>
@@ -252,7 +263,7 @@ function renderScheduleTab(schedule, meta) {
                         (l, idx) => `
                     <div class="schedule-lesson-card">
                       <div class="lesson-top-line">
-                        <span class="lesson-time-pill">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : `#${idx + 1}`))}</span>
+                        <span class="lesson-time-pill">${escapeHtml(l.time || (resolveBellTime(day.dayIndex === 5, idx + 1) || `#${idx + 1}`))}</span>
                         ${l.room ? `<span class="lesson-room-tag">каб. ${escapeHtml(l.room)}</span>` : ''}
                       </div>
                       <div class="lesson-subject-name">${escapeHtml(l.subject)}</div>
@@ -303,7 +314,7 @@ function renderScheduleTab(schedule, meta) {
                           (l, idx) => `
                       <div class="lesson-row">
                         <span class="lesson-num">${idx + 1}</span>
-                        <span class="lesson-time">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : '—'))}</span>
+                        <span class="lesson-time">${escapeHtml(l.time || (resolveBellTime(activeBaseDay === '6', idx + 1) || '—'))}</span>
                         <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                         <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
                         <button class="btn-delete-lesson" data-delete-base-day="${activeBaseDay}" data-delete-base-idx="${idx}" title="Удалить">✕</button>
@@ -365,7 +376,7 @@ function renderScheduleTab(schedule, meta) {
 
       <!-- Datalist для подсказки времени по звонкам -->
       <datalist id="bells-list">
-        ${(schedule.bells || []).map((b) => `<option value="${escapeHtml(b.start)}-${escapeHtml(b.end)}">Урок ${b.number}</option>`).join('')}
+        ${weekBells.map((b) => `<option value="${escapeHtml(b.start)}-${escapeHtml(b.end)}">Урок ${b.number} (Пн-Пт)</option>`).join('')}
       </datalist>
     </div>
   `;

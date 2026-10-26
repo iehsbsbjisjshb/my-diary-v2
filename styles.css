@@ -3479,3 +3479,51 @@ body.modal-open {
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
 }
+
+/* Расписание звонков 1 смены (Пн-Пт и Суббота) */
+.bells-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bells-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.bells-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+  .bells-columns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bells-column {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.bells-col-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.35rem;
+}
+
+.bell-type-select {
+  max-width: 110px;
+}
