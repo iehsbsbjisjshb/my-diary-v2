@@ -137,7 +137,6 @@ export function render(container, state) {
         </div>
         <div class="week-toolbar-actions">
           <button class="btn btn-today" id="week-today-btn">Сегодня</button>
-          <button class="btn btn-accent btn-sm" id="btn-week-add-task">+ Новая задача</button>
         </div>
       </div>
 
@@ -380,20 +379,6 @@ function attachEventListeners(container, state, meta) {
     currentMondayDate = getMonday(new Date());
     activeModalTask = null;
     mobileSelectedDayIso = todayISO;
-    render(container, getState());
-  });
-
-  // Кнопка "+ Новая задача" в тулбаре недели
-  container.querySelector('#btn-week-add-task')?.addEventListener('click', () => {
-    activeModalTask = {
-      isNew: true,
-      date: mobileSelectedDayIso && mobileSelectedDayIso !== 'all' ? mobileSelectedDayIso : todayISO,
-      title: '',
-      time: '',
-      duration: '',
-      category: 'personal',
-      note: ''
-    };
     render(container, getState());
   });
 

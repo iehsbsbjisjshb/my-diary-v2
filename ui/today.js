@@ -205,7 +205,7 @@ export function render(container, state) {
             <div class="words-block">
               <div class="words-info">
                 <span>Слов: <strong>${wordsLearned} / ${wordsTarget}</strong> (${wordsPercent}%)</span>
-                <button class="btn-words-add" id="btn-open-words-modal" title="Добавить выученные слова">+</button>
+                
               </div>
               <div class="progress-bar-track track-words">
                 <div class="progress-bar-fill fill-words" style="width: ${wordsPercent}%"></div>
@@ -286,10 +286,7 @@ export function render(container, state) {
         ${
           timelineItems.length === 0
             ? `
-            <div class="timeline-empty">
-              <p>На сегодня пока нет задач.</p>
-              <button class="btn btn-accent btn-sm" id="btn-today-empty-add-task" style="margin-top: 10px;">+ Создать задачу на сегодня</button>
-            </div>
+            <div class="timeline-empty">На сегодня пока нет задач.</div>
             `
             : `
             <div class="timeline-list">
@@ -576,7 +573,6 @@ function attachEventListeners(container, state, meta) {
   };
 
   container.querySelector('#btn-today-add-task')?.addEventListener('click', openNewTaskModal);
-  container.querySelector('#btn-today-empty-add-task')?.addEventListener('click', openNewTaskModal);
 
   // Клик по задаче в таймлайне для редактирования
   container.querySelectorAll('.timeline-body-clickable').forEach((el) => {
@@ -727,14 +723,6 @@ function attachEventListeners(container, state, meta) {
   container.querySelector('#btn-open-minutes-modal')?.addEventListener('click', () => {
     activeModal = 'study';
     render(container, getState());
-  });
-
-  container.querySelector('#btn-open-words-modal')?.addEventListener('click', () => {
-    activeModal = 'study';
-    render(container, getState());
-    setTimeout(() => {
-      container.querySelector('#input-study-words')?.focus();
-    }, 50);
   });
 
   // Закрытие модалки занятия китайским
