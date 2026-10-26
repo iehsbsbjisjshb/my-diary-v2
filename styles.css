@@ -2752,3 +2752,46 @@ button:disabled,
     max-width: calc(100% - 2rem);
   }
 }
+
+/* Специальный стиль для задач интервального повторения китайского */
+.chip-chinese-repeat {
+  background-color: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  font-weight: 600;
+}
+
+.repetition-icon {
+  display: inline-block;
+  font-size: 0.9em;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+.timeline-card-repetition {
+  border-left: 3px solid #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+}
+
+.task-card-repetition {
+  border-left: 3px solid #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+}
+
+.modal-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.modal-hint {
+  font-size: 0.8rem;
+  color: #c4b5fd;
+  margin-top: 6px;
+  line-height: 1.4;
+  background-color: rgba(139, 92, 246, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+}

@@ -216,12 +216,13 @@ export function render(container, state) {
 
 function renderTaskCardHtml(task) {
   const cat = CATEGORIES[task.category] || CATEGORIES.personal;
+  const isRepetition = task.category === 'chinese' && (task.title || '').toLowerCase().includes('повторить');
   const timeLabel = task.time
     ? `${escapeHtml(task.time)}${task.duration && task.duration > 0 ? ` (${task.duration} мин)` : ''}`
     : (task.duration && task.duration > 0 ? `${task.duration} мин` : '');
 
   return `
-    <div class="task-card ${task.done ? 'task-done' : ''}" 
+    <div class="task-card ${task.done ? 'task-done' : ''} ${isRepetition ? 'task-card-repetition' : ''}" 
          data-task-id="${task.id}" 
          data-task-date="${task.date}"
          draggable="true">
@@ -232,11 +233,17 @@ function renderTaskCardHtml(task) {
         </label>
         
         <div class="task-content-clickable" data-task-id="${task.id}">
-          <div class="task-title">${escapeHtml(task.title)}</div>
+          <div class="task-title">
+            ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение">🔄</span> ' : ''}${escapeHtml(task.title)}
+          </div>
           
           <div class="task-meta-line">
             ${timeLabel ? `<span class="task-time-badge">${timeLabel}</span>` : ''}
-            <span class="task-chip ${cat.className}">${cat.label}</span>
+            ${
+              isRepetition
+                ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+                : `<span class="task-chip ${cat.className}">${cat.label}</span>`
+            }
           </div>
 
           ${task.note ? `<div class="task-note">${escapeHtml(task.note)}</div>` : ''}
@@ -393,10 +400,32 @@ function attachEventListeners(container, state) {
     checkbox.addEventListener('change', (e) => {
       e.stopPropagation();
       const taskId = checkbox.getAttribute('data-task-id');
-      setState((prev) => ({
-        ...prev,
-        tasks: (prev.tasks || []).map((t) => (t.id === taskId ? { ...t, done: checkbox.checked } : t))
-      }));
+      const todayISO = formatDateISO(new Date());
+      const yesterdayISO = formatDateISO(addDays(new Date(), -1));
+
+      setState((prev) => {
+        const targetTask = (prev.tasks || []).find((t) => t.id === taskId);
+        const isRepetition = targetTask &&
+          targetTask.category === 'chinese' &&
+          (targetTask.title || '').toLowerCase().includes('повторить');
+
+        let updatedChinese = { ...(prev.chinese || {}) };
+        if (checkbox.checked && isRepetition) {
+          if (updatedChinese.lastStudyDate !== todayISO) {
+            const newStreak = (updatedChinese.lastStudyDate === yesterdayISO)
+              ? (updatedChinese.streak || 0) + 1
+              : 1;
+            updatedChinese.streak = newStreak;
+            updatedChinese.lastStudyDate = todayISO;
+          }
+        }
+
+        return {
+          ...prev,
+          chinese: updatedChinese,
+          tasks: (prev.tasks || []).map((t) => (t.id === taskId ? { ...t, done: checkbox.checked } : t))
+        };
+      });
     });
   });
 

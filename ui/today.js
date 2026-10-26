@@ -235,7 +235,10 @@ export function render(container, state) {
                   <div class="overdue-item-info">
                     <span class="overdue-date">${escapeHtml(formatShortDate(t.date))}</span>
                     <span class="overdue-title-text">${escapeHtml(t.title)}</span>
-                    <span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>
+                    ${(t.category === 'chinese' && (t.title || '').toLowerCase().includes('повторить'))
+      ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+      : `<span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>`
+  }
                   </div>
                   <div class="overdue-actions">
                     <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${t.id}" data-type="task">✓ Готово</button>
@@ -338,57 +341,60 @@ export function render(container, state) {
         </details>
       </section>
 
-      <!-- Модальное окно: Отметить занятие (минуты) -->
+      <!-- Модальное окно: Отметить занятие китайским (минуты + новые слова + интервальное повторение) -->
       ${
-        activeModal === 'minutes'
+        activeModal === 'study'
           ? `
-          <div class="modal-overlay" id="minutes-modal-overlay">
+          <div class="modal-overlay" id="study-modal-overlay">
             <div class="modal-card">
               <div class="modal-header">
-                <h3>Отметить занятие китайским</h3>
+                <h3>🇨🇳 Отметить занятие китайским</h3>
                 <button class="modal-close" id="btn-close-modal">✕</button>
               </div>
-              <form id="form-add-minutes">
-                <p class="modal-desc">Сколько минут занимались?</p>
-                <input type="number" class="form-input modal-input" id="input-minutes" min="1" max="600" value="30" required autofocus />
-                <div class="quick-minutes-chips">
-                  <button type="button" class="btn-chip" data-min="15">+15 мин</button>
-                  <button type="button" class="btn-chip" data-min="30">+30 мин</button>
-                  <button type="button" class="btn-chip" data-min="45">+45 мин</button>
-                  <button type="button" class="btn-chip" data-min="60">+60 мин</button>
+              <form id="form-add-study-session">
+                <div class="modal-field-group">
+                  <label class="form-label" for="input-study-minutes">Минут (всего) *</label>
+                  <input 
+                    type="number" 
+                    inputmode="numeric" 
+                    class="form-input modal-input" 
+                    id="input-study-minutes" 
+                    min="1" 
+                    max="600" 
+                    value="30" 
+                    required 
+                    autofocus 
+                  />
+                  <div class="quick-minutes-chips">
+                    <button type="button" class="btn-chip" data-min="15">+15 мин</button>
+                    <button type="button" class="btn-chip" data-min="30">+30 мин</button>
+                    <button type="button" class="btn-chip" data-min="45">+45 мин</button>
+                    <button type="button" class="btn-chip" data-min="60">+60 мин</button>
+                  </div>
                 </div>
-                <div class="modal-actions">
-                  <button type="submit" class="btn btn-accent" id="btn-submit-minutes">Сохранить</button>
-                  <button type="button" class="btn btn-secondary" id="btn-cancel-minutes">Отмена</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          `
-          : ''
-      }
 
-      <!-- Модальное окно: Добавить слова -->
-      ${
-        activeModal === 'words'
-          ? `
-          <div class="modal-overlay" id="words-modal-overlay">
-            <div class="modal-card">
-              <div class="modal-header">
-                <h3>Выученные слова</h3>
-                <button class="modal-close" id="btn-close-modal">✕</button>
-              </div>
-              <form id="form-add-words">
-                <p class="modal-desc">Сколько новых слов выучено?</p>
-                <input type="number" class="form-input modal-input" id="input-words" min="1" max="1000" value="10" required autofocus />
-                <div class="quick-minutes-chips">
-                  <button type="button" class="btn-words-chip" data-words="5">+5 слов</button>
-                  <button type="button" class="btn-words-chip" data-words="10">+10 слов</button>
-                  <button type="button" class="btn-words-chip" data-words="20">+20 слов</button>
+                <div class="modal-field-group" style="margin-top: 10px;">
+                  <label class="form-label" for="input-study-words">Новых слов выучено (необязательно)</label>
+                  <input 
+                    type="number" 
+                    inputmode="numeric" 
+                    class="form-input modal-input" 
+                    id="input-study-words" 
+                    min="0" 
+                    max="1000" 
+                    placeholder="0 (если не учил новые слова)" 
+                  />
+                  <div class="quick-minutes-chips">
+                    <button type="button" class="btn-words-chip" data-words="5">+5 слов</button>
+                    <button type="button" class="btn-words-chip" data-words="10">+10 слов</button>
+                    <button type="button" class="btn-words-chip" data-words="20">+20 слов</button>
+                  </div>
+                  <p class="modal-hint">🔄 При вводе слов автоматически создадутся задачи на повторение на завтра (+1), через 3 и через 7 дней.</p>
                 </div>
-                <div class="modal-actions">
-                  <button type="submit" class="btn btn-accent" id="btn-submit-words">Добавить</button>
-                  <button type="button" class="btn btn-secondary" id="btn-cancel-words">Отмена</button>
+
+                <div class="modal-actions" style="margin-top: 16px;">
+                  <button type="submit" class="btn btn-accent" id="btn-submit-study">Сохранить</button>
+                  <button type="button" class="btn btn-secondary" id="btn-cancel-study">Отмена</button>
                 </div>
               </form>
             </div>
@@ -405,17 +411,24 @@ export function render(container, state) {
 function renderTimelineCard(item) {
   const cat = CATEGORIES[item.category] || CATEGORIES.personal;
   const isHomework = item.itemType === 'homework';
+  const isRepetition = item.category === 'chinese' && (item.title || '').toLowerCase().includes('повторить');
 
   return `
-    <div class="timeline-card ${item.done ? 'timeline-card-done' : ''}">
+    <div class="timeline-card ${item.done ? 'timeline-card-done' : ''} ${isRepetition ? 'timeline-card-repetition' : ''}">
       <div class="timeline-time">${escapeHtml(item.time || '—')}</div>
       <div class="timeline-body">
         <label class="task-checkbox-label">
           <input type="checkbox" class="today-item-checkbox" data-id="${item.id}" data-type="${item.itemType}" ${item.done ? 'checked' : ''} />
           <span class="checkbox-circle"></span>
         </label>
-        <span class="timeline-title ${item.done ? 'title-done' : ''}">${escapeHtml(item.title)}</span>
-        <span class="task-chip ${isHomework ? 'chip-homework' : cat.className}">${isHomework ? 'Домашка' : cat.label}</span>
+        <span class="timeline-title ${item.done ? 'title-done' : ''}">
+          ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение">🔄</span> ' : ''}${escapeHtml(item.title)}
+        </span>
+        ${
+          isRepetition
+            ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+            : `<span class="task-chip ${isHomework ? 'chip-homework' : cat.className}">${isHomework ? 'Домашка' : cat.label}</span>`
+        }
       </div>
     </div>
   `;
@@ -424,29 +437,31 @@ function renderTimelineCard(item) {
 function attachEventListeners(container, state, meta) {
   const { todayISO, yesterdayISO, tomorrowISO, todayDoneCount } = meta;
 
-  // 1. Открытие модалки минут
+  // 1. Открытие модалки занятия
   container.querySelector('#btn-open-minutes-modal')?.addEventListener('click', () => {
-    activeModal = 'minutes';
+    activeModal = 'study';
     render(container, getState());
   });
 
-  // Открытие модалки слов
+  // Открытие модалки по кнопке добавления слов
   container.querySelector('#btn-open-words-modal')?.addEventListener('click', () => {
-    activeModal = 'words';
+    activeModal = 'study';
     render(container, getState());
+    setTimeout(() => {
+      container.querySelector('#input-study-words')?.focus();
+    }, 50);
   });
 
-  // Закрытие модалок
+  // Закрытие модалки
   const closeModal = () => {
     activeModal = null;
     render(container, getState());
   };
 
   container.querySelector('#btn-close-modal')?.addEventListener('click', closeModal);
-  container.querySelector('#btn-cancel-minutes')?.addEventListener('click', closeModal);
-  container.querySelector('#btn-cancel-words')?.addEventListener('click', closeModal);
+  container.querySelector('#btn-cancel-study')?.addEventListener('click', closeModal);
 
-  // Закрытие модалок по клику на затемненный фон (с защитой от случайного mousedown внутри окна)
+  // Закрытие модалки по клику на фон
   let modalMouseDownTarget = null;
   container.querySelectorAll('.modal-overlay').forEach((overlay) => {
     overlay.addEventListener('mousedown', (e) => {
@@ -463,57 +478,55 @@ function attachEventListeners(container, state, meta) {
   // Быстрые чипы минут
   container.querySelectorAll('.btn-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
-      const input = container.querySelector('#input-minutes');
-      if (input) input.value = chip.getAttribute('data-min');
+      const input = container.querySelector('#input-study-minutes');
+      if (input) {
+        input.value = chip.getAttribute('data-min');
+        const btnSub = container.querySelector('#btn-submit-study');
+        if (btnSub) btnSub.disabled = false;
+      }
     });
   });
 
   // Быстрые чипы слов
   container.querySelectorAll('.btn-words-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
-      const input = container.querySelector('#input-words');
+      const input = container.querySelector('#input-study-words');
       if (input) {
         input.value = chip.getAttribute('data-words');
-        const btnSub = container.querySelector('#btn-submit-words');
-        if (btnSub) btnSub.disabled = false;
       }
     });
   });
 
-  const inputMinutes = container.querySelector('#input-minutes');
-  const btnSubMinutes = container.querySelector('#btn-submit-minutes');
-  if (inputMinutes && btnSubMinutes) {
+  const inputMinutes = container.querySelector('#input-study-minutes');
+  const btnSubStudy = container.querySelector('#btn-submit-study');
+  if (inputMinutes && btnSubStudy) {
     inputMinutes.addEventListener('input', () => {
       const v = parseInt(inputMinutes.value, 10);
-      btnSubMinutes.disabled = isNaN(v) || v <= 0;
+      btnSubStudy.disabled = isNaN(v) || v <= 0;
     });
   }
 
-  const inputWords = container.querySelector('#input-words');
-  const btnSubWords = container.querySelector('#btn-submit-words');
-  if (inputWords && btnSubWords) {
-    inputWords.addEventListener('input', () => {
-      const v = parseInt(inputWords.value, 10);
-      btnSubWords.disabled = isNaN(v) || v <= 0;
-    });
-  }
-
-  // Сабмит минут китайского
-  container.querySelector('#form-add-minutes')?.addEventListener('submit', (e) => {
+  // Сабмит формы занятия китайским (минуты + новые слова + интервальное повторение)
+  container.querySelector('#form-add-study-session')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const input = container.querySelector('#input-minutes');
-    const minutes = parseInt(input.value, 10);
+    const minutesInput = container.querySelector('#input-study-minutes');
+    const wordsInput = container.querySelector('#input-study-words');
+
+    const minutes = parseInt(minutesInput.value, 10);
     if (!minutes || minutes <= 0) return;
 
-    // Сбрасываем модалку ДО вызова setState, чтобы синхронный перерендер отрисовал закрытое состояние
+    const words = wordsInput.value ? parseInt(wordsInput.value, 10) : 0;
+
+    // Сбрасываем модалку ДО вызова setState
     activeModal = null;
 
     setState((prev) => {
-      const chinese = { ...prev.chinese };
+      const chinese = { ...(prev.chinese || {}) };
       const history = { ...(chinese.history || {}) };
       const currentTodayMinutes = history[todayISO] || 0;
       history[todayISO] = currentTodayMinutes + minutes;
 
+      // Расчет streak:
       let newStreak = chinese.streak || 0;
       if (chinese.lastStudyDate !== todayISO) {
         if (chinese.lastStudyDate === yesterdayISO) {
@@ -523,38 +536,50 @@ function attachEventListeners(container, state, meta) {
         }
       }
 
+      // Генерация задач интервального повторения (+1, +3, +7 дней), если введены слова > 0
+      let updatedTasks = [...(prev.tasks || [])];
+      if (words > 0) {
+        const nowObj = new Date();
+        const dayStr = String(nowObj.getDate()).padStart(2, '0');
+        const monthStr = String(nowObj.getMonth() + 1).padStart(2, '0');
+        const noteDateStr = `${dayStr}.${monthStr}`;
+        const wordDecl = getPluralWords(words);
+        const taskTitle = `Китайский: повторить ${words} ${wordDecl}`;
+        const taskNote = `Выучены ${noteDateStr}`;
+
+        const repetitionOffsets = [1, 3, 7];
+        const newRepetitionTasks = repetitionOffsets.map((offsetDays) => {
+          const targetDateISO = formatDateISO(addDays(nowObj, offsetDays));
+          return {
+            id: 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6) + offsetDays,
+            title: taskTitle,
+            category: 'chinese',
+            date: targetDateISO,
+            time: '',
+            duration: 15,
+            done: false,
+            note: taskNote
+          };
+        });
+
+        updatedTasks = [...updatedTasks, ...newRepetitionTasks];
+      }
+
       return {
         ...prev,
         chinese: {
           ...chinese,
           totalMinutes: (chinese.totalMinutes || 0) + minutes,
+          wordsLearned: (chinese.wordsLearned || 0) + (words > 0 ? words : 0),
           streak: newStreak,
           lastStudyDate: todayISO,
           history
-        }
+        },
+        tasks: updatedTasks
       };
     });
-    showToast('Сохранено', { type: 'success' });
-  });
 
-  // Сабмит слов китайского
-  container.querySelector('#form-add-words')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = container.querySelector('#input-words');
-    const words = parseInt(input.value, 10);
-    if (!words || words <= 0) return;
-
-    // Сбрасываем модалку ДО вызова setState
-    activeModal = null;
-
-    setState((prev) => ({
-      ...prev,
-      chinese: {
-        ...prev.chinese,
-        wordsLearned: (prev.chinese.wordsLearned || 0) + words
-      }
-    }));
-    showToast('Сохранено', { type: 'success' });
+    showToast(words > 0 ? 'Занятие сохранено! Создано 3 задачи на повторение' : 'Занятие сохранено', { type: 'success' });
   });
 
   // 2. Чекбоксы таймлайна (выполнение задачи или домашки)
@@ -566,8 +591,25 @@ function attachEventListeners(container, state, meta) {
 
       setState((prev) => {
         if (type === 'task') {
+          const targetTask = (prev.tasks || []).find((t) => t.id === id);
+          const isRepetition = targetTask &&
+            targetTask.category === 'chinese' &&
+            (targetTask.title || '').toLowerCase().includes('повторить');
+
+          let updatedChinese = { ...(prev.chinese || {}) };
+          if (checked && isRepetition) {
+            if (updatedChinese.lastStudyDate !== todayISO) {
+              const newStreak = (updatedChinese.lastStudyDate === yesterdayISO)
+                ? (updatedChinese.streak || 0) + 1
+                : 1;
+              updatedChinese.streak = newStreak;
+              updatedChinese.lastStudyDate = todayISO;
+            }
+          }
+
           return {
             ...prev,
+            chinese: updatedChinese,
             tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, done: checked } : t))
           };
         } else {
@@ -694,6 +736,15 @@ function attachEventListeners(container, state, meta) {
   container.querySelector('#btn-goto-week-plan')?.addEventListener('click', () => {
     window.location.hash = '#/week?next=1';
   });
+}
+
+function getPluralWords(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return 'слов';
+  if (mod10 === 1) return 'слово';
+  if (mod10 >= 2 && mod10 <= 4) return 'слова';
+  return 'слов';
 }
 
 function getPluralDays(n) {
