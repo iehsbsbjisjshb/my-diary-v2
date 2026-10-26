@@ -254,40 +254,44 @@ body {
   font-size: 1.2rem;
 }
 
-/* Сетка колонок недели */
+/* Сетка колонок недели (TickTick / Notion dark theme) */
 .week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 14px;
-  align-items: start;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
   width: 100%;
+  padding-bottom: 8px;
+  align-items: stretch;
+  box-sizing: border-box;
 }
 
 .day-col {
-  background-color: #161622;
-  border: 1px solid #262638;
-  border-radius: 14px;
-  padding: 14px;
+  flex: 1 1 0;
+  min-width: 180px;
+  background-color: #141419;
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  min-height: 380px;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  min-height: 420px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .day-col:hover {
-  border-color: #38384f;
+  border-color: #3a3a48;
 }
 
 .day-col.day-today {
-  border-color: var(--accent-color);
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.09) 0%, #161622 100%);
-  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.16);
+  border-color: #8b5cf6;
+  background-color: #171622;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.14);
 }
 
 .day-col.drag-over {
-  border: 2px dashed var(--accent-color);
-  background-color: rgba(139, 92, 246, 0.16);
+  border: 2px dashed #8b5cf6;
+  background-color: rgba(139, 92, 246, 0.12);
 }
 
 .day-header {
@@ -295,74 +299,55 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #262638;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2a2a35;
 }
 
-.day-header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.day-header-top {
+.day-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.day-weekday {
-  font-size: 0.8rem;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  color: #9ca3af;
-  letter-spacing: 0.05em;
-}
-
-.day-today .day-weekday {
-  color: #a78bfa;
+  color: #ffffff;
+  letter-spacing: 0.02em;
 }
 
 .day-today-tag {
-  font-size: 0.65rem;
+  font-size: 10px;
   font-weight: 700;
   color: #ffffff;
-  background-color: var(--accent-color);
-  padding: 1px 6px;
+  background-color: #8b5cf6;
+  padding: 2px 6px;
   border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.day-date {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #f3f4f6;
+  letter-spacing: 0.04em;
 }
 
 .btn-add-task {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  background-color: rgba(139, 92, 246, 0.1);
-  color: #c4b5fd;
-  font-size: 1.35rem;
-  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: #9ca3af;
+  font-size: 18px;
   line-height: 1;
+  cursor: pointer;
+  padding: 0;
   transition: all 0.15s ease;
 }
 
 .btn-add-task:hover {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
   color: #ffffff;
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 /* Список задач дня */
@@ -371,26 +356,27 @@ body {
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  min-height: 80px;
+  min-height: 50px;
 }
 
-/* Карточка задачи */
+/* ==========================================================================
+   Карточка задачи (TickTick dark style)
+   ========================================================================== */
 .task-card {
-  background-color: #1e1e2e;
-  border: 1px solid #2c2c40;
-  border-radius: 10px;
-  padding: 10px 12px;
+  background-color: #1c1c24;
+  border: 1px solid #2a2a35;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
   cursor: grab;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .task-card:hover {
-  background-color: #26263b;
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
+  background-color: #22222d;
+  border-color: #3b3b4c;
 }
 
 .task-card:active {
@@ -399,13 +385,13 @@ body {
 
 .task-card.is-dragging {
   opacity: 0.35;
-  border-color: var(--accent-color);
+  border-color: #8b5cf6;
 }
 
 .task-card.task-done {
   opacity: 0.55;
-  background-color: #14141e;
-  border-color: #20202e;
+  background-color: #15151c;
+  border-color: #22222d;
 }
 
 .task-card.task-done .task-title {
@@ -416,26 +402,62 @@ body {
 .task-card-main {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
+/* Круглый кастомный чекбокс (TickTick) */
 .task-checkbox-label {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 2px;
   cursor: pointer;
+  margin-top: 1px;
   flex-shrink: 0;
+  user-select: none;
 }
 
-.task-checkbox {
-  width: 19px;
-  height: 19px;
-  accent-color: var(--accent-color);
-  cursor: pointer;
+.task-checkbox-label .task-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.checkbox-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #525266;
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.task-checkbox-label:hover .checkbox-circle {
+  border-color: #8b5cf6;
+}
+
+.task-checkbox:checked + .checkbox-circle {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.task-checkbox:checked + .checkbox-circle::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
 }
 
 .task-content-clickable {
@@ -444,66 +466,62 @@ body {
   cursor: pointer;
 }
 
-.task-header-line {
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.task-meta-line {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-top: 6px;
 }
 
 .task-time-badge {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #c4b5fd;
-  background-color: rgba(139, 92, 246, 0.18);
-  padding: 2px 7px;
-  border-radius: 5px;
-  letter-spacing: 0.02em;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  background: #2a2a35;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
 }
 
 .task-chip {
-  font-size: 0.72rem;
+  font-size: 11px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 5px;
-  border: 1px solid transparent;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
 }
 
 .chip-chinese {
   background-color: rgba(249, 115, 22, 0.16);
   color: #fb923c;
-  border-color: rgba(249, 115, 22, 0.3);
 }
 
 .chip-homework {
   background-color: rgba(59, 130, 246, 0.16);
   color: #60a5fa;
-  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .chip-school {
   background-color: rgba(16, 185, 129, 0.16);
   color: #34d399;
-  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .chip-personal {
   background-color: rgba(139, 92, 246, 0.16);
   color: #c4b5fd;
-  border-color: rgba(139, 92, 246, 0.3);
-}
-
-.task-title {
-  font-size: 0.92rem;
-  font-weight: 500;
-  word-break: break-word;
-  line-height: 1.4;
-  color: #f3f4f6;
 }
 
 .task-note {
-  font-size: 0.8rem;
+  font-size: 12px;
   color: #9ca3af;
   margin-top: 4px;
   word-break: break-word;
@@ -515,48 +533,131 @@ body {
   border: none;
   color: #71717a;
   cursor: pointer;
-  font-size: 0.95rem;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  font-size: 13px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 4px;
   line-height: 1;
   flex-shrink: 0;
   transition: all 0.15s ease;
+  padding: 0;
 }
 
 .btn-task-action:hover {
   color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.12);
+  background-color: rgba(239, 68, 68, 0.15);
 }
 
-/* Инлайн форма задачи */
+/* ==========================================================================
+   Инлайн форма создания задачи (Notion dark style)
+   ========================================================================== */
 .task-inline-form {
-  background-color: #1c1c2b;
-  border: 1px solid var(--accent-color);
-  border-radius: 12px;
-  padding: 14px;
+  background-color: #141419;
+  border: 1px solid #2a2a35;
+  border-radius: 10px;
+  padding: 10px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 14px rgba(139, 92, 246, 0.18);
-  animation: taskFormFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-@keyframes taskFormFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.task-inline-form .form-input {
+  width: 100%;
+  background: #0b0b0f;
+  border: 1px solid #3a3a45;
+  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 40px;
+}
+
+.task-inline-form .form-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+}
+
+.task-inline-form .form-input::placeholder {
+  color: #6b7280;
+}
+
+.task-inline-form select.form-input {
+  cursor: pointer;
+}
+
+.task-inline-form select.form-input option {
+  background-color: #141419;
+  color: #ffffff;
+}
+
+.form-datetime-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-datetime-row .form-input {
+  flex: 1 1 50%;
+  width: 50%;
+  min-width: 0;
+}
+
+.btn-save-task {
+  background: #8b5cf6;
+  color: #ffffff;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+  text-align: center;
+}
+
+.btn-save-task:hover:not(:disabled) {
+  background-color: #7c3aed;
+}
+
+.btn-save-task:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel-task {
+  background: transparent;
+  color: #9ca3af;
+  border: none;
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 8px;
+  margin-top: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-cancel-task:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .form-group {
@@ -619,11 +720,7 @@ body {
   width: 100%;
 }
 
-.btn-save-task {
-  flex: 1;
-  min-height: 44px;
-  font-weight: 600;
-}
+
 
 .btn-ghost {
   min-height: 44px;
@@ -2186,20 +2283,16 @@ body {
 }
 
 /* Мобильная и планшетная адаптация недели */
-@media (max-width: 1100px) {
+@media (max-width: 768px) {
   .week-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-  }
-}
-
-@media (max-width: 640px) {
-  .week-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    flex-direction: column;
+    overflow-x: visible;
+    gap: 12px;
   }
 
   .day-col {
+    width: 100%;
+    min-width: 0;
     min-height: auto;
   }
 }
