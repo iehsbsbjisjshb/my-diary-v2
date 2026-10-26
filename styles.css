@@ -27,79 +27,169 @@ body {
   flex-direction: column;
 }
 
-/* Шапка приложения */
-.app-header {
-  background-color: var(--surface-color);
-  border-bottom: 1px solid var(--border-color);
+/* ==========================================================================
+   Анимированный градиентный фон
+   ========================================================================== */
+.animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(-45deg, #0b0b0f, #171124, #1a0f2e, #0b0b0f);
+  background-size: 400% 400%;
+  animation: bgGradientShift 18s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes bgGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Анимация переходов между страницами */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade-in {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ==========================================================================
+   Макет приложения (Сайдбар + Контент)
+   ========================================================================== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Боковая панель (Sidebar) 240px */
+.app-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background-color: rgba(18, 18, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  height: 100vh;
+  z-index: 50;
+  box-sizing: border-box;
 }
 
-.header-container {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0.5rem 1rem;
+.sidebar-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
 }
 
-.app-title {
-  font-size: 1.25rem;
+.sidebar-title {
+  font-size: 1.35rem;
   font-weight: 700;
+  color: #ffffff;
   letter-spacing: -0.02em;
-  white-space: nowrap;
+  margin: 0;
 }
 
-.app-nav {
+.sidebar-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0;
+}
+
+.app-sidebar .app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.app-sidebar .nav-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--touch-size);
-  min-width: var(--touch-size);
-  padding: 0 1rem;
-  color: var(--text-muted);
-  text-decoration: none;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
   font-weight: 500;
   font-size: 0.95rem;
-  border-radius: 8px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  min-height: 44px;
   user-select: none;
 }
 
-.nav-link:hover {
-  color: var(--text-main);
-  background-color: var(--surface-hover);
+.app-sidebar .nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-.nav-link.active {
+.app-sidebar .nav-link.active {
   color: #ffffff;
-  background-color: var(--accent-color);
+  background-color: #8b5cf6;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+}
+
+.app-sidebar .nav-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.app-sidebar .nav-label {
+  font-size: 0.95rem;
+}
+
+.app-main-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mobile-header {
+  display: none;
 }
 
 .app-content {
-  flex: 1;
-  max-width: 1280px;
+  max-width: 1200px;
   width: 100%;
+  padding: 24px 20px;
   margin: 0 auto;
-  padding: 1.25rem 1rem;
+  box-sizing: border-box;
 }
 
-.app-content h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+.week-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
 
 /* Базовые кнопки */
 .btn {
@@ -2412,49 +2502,81 @@ body {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   html, body {
     overflow-x: hidden;
     width: 100%;
   }
 
   body {
-    padding-bottom: calc(60px + 1rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(60px + 12px + env(safe-area-inset-bottom, 0px));
   }
 
-  .header-container {
+  .app-layout {
+    flex-direction: column;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar-header {
+    display: none;
+  }
+
+  .app-sidebar {
+    display: contents;
+  }
+
+  .mobile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: 0.6rem 1rem;
-  }
-
-  .app-header {
+    gap: 2px;
+    padding: 10px 16px;
+    background-color: rgba(18, 18, 26, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100%;
   }
 
-  .app-title {
+  .mobile-title {
     font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .mobile-subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
 
   /* Нижняя навигация на мобильном */
-  .app-nav {
+  .app-sidebar .app-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     height: 60px;
-    background-color: var(--surface-color);
+    background-color: rgba(18, 18, 26, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--border-color);
-    padding: 0 0.25rem;
+    padding: 0 4px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     display: flex;
+    flex-direction: row;
     justify-content: space-around;
     align-items: center;
     z-index: 100;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
     overflow: hidden;
   }
 
-  .nav-link {
+  .app-sidebar .nav-link {
     flex: 1;
     min-height: 48px;
     min-width: 44px;
@@ -2467,19 +2589,26 @@ body {
     font-size: 0.72rem;
     border-radius: 8px;
     text-align: center;
+    color: #9ca3af;
   }
 
-  .nav-icon {
+  .app-sidebar .nav-link.active {
+    color: #ffffff;
+    background-color: #8b5cf6;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .app-sidebar .nav-icon {
     font-size: 1.15rem;
     line-height: 1;
   }
 
-  .nav-label {
+  .app-sidebar .nav-label {
     font-size: 0.72rem;
     line-height: 1.1;
   }
-
-  /* Адаптив блоков под ширину 360px */
+/* Адаптив блоков под ширину 360px */
   .app-content {
     padding: 0.75rem 0.6rem;
     overflow-x: hidden;
@@ -2794,4 +2923,124 @@ button:disabled,
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px dashed rgba(139, 92, 246, 0.3);
+}
+
+/* ==========================================================================
+   Модальное окно задачи (Вместо инлайн формы)
+   ========================================================================== */
+.task-modal-card {
+  background-color: #181820;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid #2a2a35;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.task-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.task-modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.task-modal-form .form-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.task-modal-form .form-input {
+  width: 100%;
+  background: #0b0b0f;
+  border: 1px solid #2a2a35;
+  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 42px;
+}
+
+.task-modal-form .form-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+}
+
+.task-modal-form .form-input::placeholder {
+  color: #6b7280;
+}
+
+.task-modal-form select.form-input {
+  cursor: pointer;
+}
+
+.task-modal-form select.form-input option {
+  background-color: #181820;
+  color: #ffffff;
+}
+
+.task-modal-form .form-datetime-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.task-modal-form .form-col-half {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.task-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.task-modal-actions .btn {
+  padding: 0 20px;
+  min-height: 42px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.task-modal-actions .btn-save-task {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.task-modal-actions .btn-save-task:hover:not(:disabled) {
+  background-color: #7c3aed;
+  border-color: #7c3aed;
+}
+
+.task-modal-actions .btn-cancel-task {
+  background-color: transparent;
+  border: 1px solid #3a3a48;
+  color: #9ca3af;
+}
+
+.task-modal-actions .btn-cancel-task:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }

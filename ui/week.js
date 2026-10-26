@@ -2,8 +2,7 @@ import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
 
 let currentMondayDate = getMonday(new Date());
-let activeNewTaskDay = null; // 'YYYY-MM-DD' or null
-let editingTaskId = null; // taskId or null
+let activeModalTask = null; // null | { isNew: boolean, id?: string, date: string, title: string, time: string, duration: number|string, category: string, note: string }
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const DAYS_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -76,15 +75,6 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-function parseLocalDate(str) {
-  if (!str) return new Date();
-  const parts = str.split('-').map(Number);
-  if (parts.length === 3) {
-    return new Date(parts[0], parts[1] - 1, parts[2]);
-  }
-  return new Date(str);
-}
-
 export function render(container, state) {
   if (window.location.hash.includes('next=1')) {
     currentMondayDate = addDays(getMonday(new Date()), 7);
@@ -134,7 +124,10 @@ export function render(container, state) {
           <span class="week-title-range">${formatWeekRange(currentMondayDate, sunday)}</span>
           <button class="btn btn-nav" id="week-next" aria-label="Следующая неделя" title="Следующая неделя">→</button>
         </div>
-        <button class="btn btn-today" id="week-today-btn">Сегодня</button>
+        <div class="week-toolbar-actions">
+          <button class="btn btn-today" id="week-today-btn">Сегодня</button>
+          <button class="btn btn-accent btn-sm" id="btn-week-add-task">+ Новая задача</button>
+        </div>
       </div>
 
       <!-- Баннер планирования недели -->
@@ -156,7 +149,6 @@ export function render(container, state) {
       <div class="week-grid">
         ${days
           .map((day) => {
-            const isAddingHere = activeNewTaskDay === day.iso;
             return `
             <div class="day-col ${day.isToday ? 'day-today' : ''}" data-day-iso="${day.iso}">
               <div class="day-header">
@@ -167,39 +159,10 @@ export function render(container, state) {
                 <button class="btn-add-task" data-day-iso="${day.iso}" title="Добавить задачу" aria-label="Добавить задачу">+</button>
               </div>
 
-              <!-- Форма создания задачи -->
-              ${
-                isAddingHere
-                  ? renderTaskFormHtml({
-                      isNew: true,
-                      date: day.iso,
-                      title: '',
-                      time: '',
-                      duration: '',
-                      category: 'personal',
-                      note: ''
-                    })
-                  : ''
-              }
-
               <!-- Список задач -->
               <div class="day-task-list" data-day-iso="${day.iso}">
                 ${day.tasks
-                  .map((task) => {
-                    if (editingTaskId === task.id) {
-                      return renderTaskFormHtml({
-                        isNew: false,
-                        id: task.id,
-                        date: task.date,
-                        title: task.title,
-                        time: task.time,
-                        duration: task.duration,
-                        category: task.category,
-                        note: task.note
-                      });
-                    }
-                    return renderTaskCardHtml(task);
-                  })
+                  .map((task) => renderTaskCardHtml(task))
                   .join('')}
               </div>
             </div>
@@ -207,11 +170,14 @@ export function render(container, state) {
           })
           .join('')}
       </div>
+
+      <!-- Модальное окно создания / редактирования задачи -->
+      ${activeModalTask ? renderTaskModalHtml(activeModalTask) : ''}
     </div>
   `;
 
   // Навешиваем слушатели событий
-  attachEventListeners(container, state);
+  attachEventListeners(container, state, { todayISO });
 }
 
 function renderTaskCardHtml(task) {
@@ -255,89 +221,114 @@ function renderTaskCardHtml(task) {
   `;
 }
 
-function renderTaskFormHtml(fields) {
+function renderTaskModalHtml(fields) {
   const isTitleEmpty = !fields.title || !fields.title.trim();
   return `
-    <form class="task-inline-form" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}" data-day-iso="${fields.date}">
-      <input 
-        type="text" 
-        class="form-input form-title-input" 
-        placeholder="Название задачи *" 
-        value="${escapeHtml(fields.title)}" 
-        required 
-        autofocus 
-      />
+    <div class="modal-overlay task-modal-overlay" id="task-modal-overlay">
+      <div class="modal-card task-modal-card">
+        <div class="modal-header">
+          <h3>${fields.isNew ? 'Новая задача' : 'Редактирование задачи'}</h3>
+          <button class="modal-close" id="btn-close-task-modal" type="button">✕</button>
+        </div>
 
-      <div class="form-datetime-row">
-        <input 
-          type="date" 
-          class="form-input form-task-date-input" 
-          value="${fields.date}" 
-          required 
-        />
-        <input 
-          type="time" 
-          class="form-input form-time-input" 
-          value="${escapeHtml(fields.time || '')}" 
-          placeholder="Время"
-        />
+        <form class="task-modal-form" id="form-task-modal" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}">
+          <div class="form-group">
+            <label class="form-label" for="task-title-input">Название задачи *</label>
+            <input 
+              type="text" 
+              id="task-title-input"
+              class="form-input form-title-input" 
+              placeholder="Что нужно сделать?" 
+              value="${escapeHtml(fields.title)}" 
+              required 
+              autofocus 
+            />
+          </div>
+
+          <div class="form-datetime-row">
+            <div class="form-group form-col-half">
+              <label class="form-label" for="task-date-input">Дата *</label>
+              <input 
+                type="date" 
+                id="task-date-input"
+                class="form-input form-task-date-input" 
+                value="${fields.date}" 
+                required 
+              />
+            </div>
+            <div class="form-group form-col-half">
+              <label class="form-label" for="task-time-input">Время (опционально)</label>
+              <input 
+                type="time" 
+                id="task-time-input"
+                class="form-input form-time-input" 
+                value="${escapeHtml(fields.time || '')}" 
+              />
+            </div>
+          </div>
+
+          <div class="form-datetime-row">
+            <div class="form-group form-col-half">
+              <label class="form-label" for="task-duration-input">Длительность (минут)</label>
+              <input 
+                type="number" 
+                inputmode="numeric" 
+                id="task-duration-input"
+                class="form-input form-duration-input" 
+                placeholder="например, 30" 
+                min="0" 
+                step="5" 
+                value="${fields.duration || ''}" 
+              />
+            </div>
+            <div class="form-group form-col-half">
+              <label class="form-label" for="task-category-select">Категория</label>
+              <select id="task-category-select" class="form-input form-category-select">
+                <option value="chinese" ${fields.category === 'chinese' ? 'selected' : ''}>Китайский</option>
+                <option value="homework" ${fields.category === 'homework' ? 'selected' : ''}>Домашка</option>
+                <option value="school" ${fields.category === 'school' ? 'selected' : ''}>Школа</option>
+                <option value="personal" ${fields.category === 'personal' || !fields.category ? 'selected' : ''}>Личное</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="task-note-input">Заметка (опционально)</label>
+            <input 
+              type="text" 
+              id="task-note-input"
+              class="form-input form-note-input" 
+              placeholder="Детали или ссылка" 
+              value="${escapeHtml(fields.note || '')}" 
+            />
+          </div>
+
+          <div class="modal-actions task-modal-actions">
+            <button type="button" class="btn btn-secondary btn-cancel-task" id="btn-cancel-task-modal">Отмена</button>
+            <button type="submit" class="btn btn-accent btn-save-task" ${isTitleEmpty ? 'disabled' : ''}>
+              ${fields.isNew ? 'Создать' : 'Сохранить'}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <input 
-        type="number" 
-        inputmode="numeric" 
-        class="form-input form-duration-input" 
-        placeholder="Длительность (мин)" 
-        min="0" 
-        step="5" 
-        value="${fields.duration || ''}" 
-      />
-
-      <select class="form-input form-category-select">
-        <option value="chinese" ${fields.category === 'chinese' ? 'selected' : ''}>Китайский</option>
-        <option value="homework" ${fields.category === 'homework' ? 'selected' : ''}>Домашка</option>
-        <option value="school" ${fields.category === 'school' ? 'selected' : ''}>Школа</option>
-        <option value="personal" ${fields.category === 'personal' || !fields.category ? 'selected' : ''}>Личное</option>
-      </select>
-
-      <input 
-        type="text" 
-        class="form-input form-note-input" 
-        placeholder="Заметка (опционально)" 
-        value="${escapeHtml(fields.note || '')}" 
-      />
-
-      <button type="submit" class="btn btn-save-task" ${isTitleEmpty ? 'disabled' : ''}>Сохранить</button>
-      <button type="button" class="btn btn-cancel-task btn-form-cancel">Отмена</button>
-    </form>
+    </div>
   `;
 }
 
-function attachEventListeners(container, state) {
-  // Валидация обязательного поля названия задачи
-  container.querySelectorAll('.task-inline-form').forEach((form) => {
-    const titleInput = form.querySelector('.form-title-input');
-    const saveBtn = form.querySelector('.btn-save-task');
-    if (titleInput && saveBtn) {
-      titleInput.addEventListener('input', () => {
-        saveBtn.disabled = !titleInput.value.trim();
-      });
-    }
-  });
+function attachEventListeners(container, state, meta) {
+  const { todayISO } = meta;
 
   // Навигация недели: Назад
   container.querySelector('#week-prev')?.addEventListener('click', () => {
     currentMondayDate = addDays(currentMondayDate, -7);
-    activeNewTaskDay = null;
-    editingTaskId = null;
+    activeModalTask = null;
     render(container, getState());
   });
 
   // Навигация недели: Вперед
   container.querySelector('#week-next')?.addEventListener('click', () => {
     currentMondayDate = addDays(currentMondayDate, 7);
-    activeNewTaskDay = null;
-    editingTaskId = null;
+    activeModalTask = null;
     render(container, getState());
   });
 
@@ -348,8 +339,21 @@ function attachEventListeners(container, state) {
       return;
     }
     currentMondayDate = getMonday(new Date());
-    activeNewTaskDay = null;
-    editingTaskId = null;
+    activeModalTask = null;
+    render(container, getState());
+  });
+
+  // Кнопка "+ Новая задача" в тулбаре недели
+  container.querySelector('#btn-week-add-task')?.addEventListener('click', () => {
+    activeModalTask = {
+      isNew: true,
+      date: todayISO,
+      title: '',
+      time: '',
+      duration: '',
+      category: 'personal',
+      note: ''
+    };
     render(container, getState());
   });
 
@@ -374,12 +378,15 @@ function attachEventListeners(container, state) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const dayIso = btn.getAttribute('data-day-iso');
-      if (activeNewTaskDay === dayIso) {
-        activeNewTaskDay = null;
-      } else {
-        activeNewTaskDay = dayIso;
-        editingTaskId = null;
-      }
+      activeModalTask = {
+        isNew: true,
+        date: dayIso,
+        title: '',
+        time: '',
+        duration: '',
+        category: 'personal',
+        note: ''
+      };
       render(container, getState());
     });
   });
@@ -389,18 +396,123 @@ function attachEventListeners(container, state) {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const taskId = el.getAttribute('data-task-id');
-      editingTaskId = taskId;
-      activeNewTaskDay = null;
-      render(container, getState());
+      const task = (state.tasks || []).find((t) => t.id === taskId);
+      if (task) {
+        activeModalTask = {
+          isNew: false,
+          id: task.id,
+          date: task.date,
+          title: task.title,
+          time: task.time,
+          duration: task.duration,
+          category: task.category,
+          note: task.note
+        };
+        render(container, getState());
+      }
     });
   });
 
-  // Чекбокс выполнения
+  // Закрытие модального окна задачи
+  const closeTaskModal = () => {
+    activeModalTask = null;
+    render(container, getState());
+  };
+
+  container.querySelector('#btn-close-task-modal')?.addEventListener('click', closeTaskModal);
+  container.querySelector('#btn-cancel-task-modal')?.addEventListener('click', closeTaskModal);
+
+  // Закрытие по клику на фон
+  let modalMouseDownTarget = null;
+  container.querySelectorAll('#task-modal-overlay').forEach((overlay) => {
+    overlay.addEventListener('mousedown', (e) => {
+      modalMouseDownTarget = e.target;
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay && modalMouseDownTarget === overlay) {
+        closeTaskModal();
+      }
+      modalMouseDownTarget = null;
+    });
+  });
+
+  // Валидация заголовка задачи в модалке
+  const modalTitleInput = container.querySelector('#task-title-input');
+  const modalSaveBtn = container.querySelector('.btn-save-task');
+  if (modalTitleInput && modalSaveBtn) {
+    modalTitleInput.addEventListener('input', () => {
+      modalSaveBtn.disabled = !modalTitleInput.value.trim();
+    });
+  }
+
+  // Сабмит модалки задачи
+  container.querySelector('#form-task-modal')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const mode = form.getAttribute('data-form-mode');
+    const taskId = form.getAttribute('data-task-id');
+
+    const titleInput = form.querySelector('.form-title-input');
+    const dateInput = form.querySelector('.form-task-date-input');
+    const timeInput = form.querySelector('.form-time-input');
+    const durationInput = form.querySelector('.form-duration-input');
+    const categorySelect = form.querySelector('.form-category-select');
+    const noteInput = form.querySelector('.form-note-input');
+
+    const title = titleInput.value.trim();
+    if (!title) return;
+
+    const targetDate = dateInput ? dateInput.value : todayISO;
+    const time = timeInput.value || '';
+    const duration = durationInput.value ? parseInt(durationInput.value, 10) : 0;
+    const category = categorySelect.value || 'personal';
+    const note = noteInput.value.trim();
+
+    // Сбрасываем модалку ДО вызова setState
+    activeModalTask = null;
+
+    if (mode === 'new') {
+      const newTask = {
+        id: 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        title,
+        date: targetDate,
+        time,
+        duration,
+        category,
+        done: false,
+        note
+      };
+      setState((prev) => ({
+        ...prev,
+        tasks: [...(prev.tasks || []), newTask]
+      }));
+      showToast('Задача создана', { type: 'success' });
+    } else {
+      setState((prev) => ({
+        ...prev,
+        tasks: (prev.tasks || []).map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                title,
+                date: targetDate,
+                time,
+                duration,
+                category,
+                note
+              }
+            : t
+        )
+      }));
+      showToast('Сохранено', { type: 'success' });
+    }
+  });
+
+  // Чекбокс выполнения задачи
   container.querySelectorAll('.task-checkbox').forEach((checkbox) => {
     checkbox.addEventListener('change', (e) => {
       e.stopPropagation();
       const taskId = checkbox.getAttribute('data-task-id');
-      const todayISO = formatDateISO(new Date());
       const yesterdayISO = formatDateISO(addDays(new Date(), -1));
 
       setState((prev) => {
@@ -439,80 +551,6 @@ function attachEventListeners(container, state) {
         ...prev,
         tasks: (prev.tasks || []).filter((t) => t.id !== taskId)
       }));
-    });
-  });
-
-  // Кнопка отмены формы
-  container.querySelectorAll('.btn-form-cancel').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      activeNewTaskDay = null;
-      editingTaskId = null;
-      render(container, getState());
-    });
-  });
-
-  // Сабмит формы (создание или редактирование)
-  container.querySelectorAll('.task-inline-form').forEach((form) => {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const mode = form.getAttribute('data-form-mode');
-      const dayIso = form.getAttribute('data-day-iso');
-      const taskId = form.getAttribute('data-task-id');
-
-      const titleInput = form.querySelector('.form-title-input');
-      const dateInput = form.querySelector('.form-task-date-input');
-      const timeInput = form.querySelector('.form-time-input');
-      const durationInput = form.querySelector('.form-duration-input');
-      const categorySelect = form.querySelector('.form-category-select');
-      const noteInput = form.querySelector('.form-note-input');
-
-      const title = titleInput.value.trim();
-      if (!title) return;
-
-      const targetDate = dateInput ? dateInput.value : dayIso;
-      const time = timeInput.value || '';
-      const duration = durationInput.value ? parseInt(durationInput.value, 10) : 0;
-      const category = categorySelect.value || 'personal';
-      const note = noteInput.value.trim();
-
-      if (mode === 'new') {
-        const newTask = {
-          id: 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-          title,
-          date: targetDate,
-          time,
-          duration,
-          category,
-          done: false,
-          note
-        };
-        activeNewTaskDay = null;
-        setState((prev) => ({
-          ...prev,
-          tasks: [...(prev.tasks || []), newTask]
-        }));
-        showToast('Сохранено', { type: 'success' });
-      } else {
-        editingTaskId = null;
-        setState((prev) => ({
-          ...prev,
-          tasks: (prev.tasks || []).map((t) =>
-            t.id === taskId
-              ? {
-                  ...t,
-                  title,
-                  date: targetDate,
-                  time,
-                  duration,
-                  category,
-                  note
-                }
-              : t
-          )
-        }));
-        showToast('Сохранено', { type: 'success' });
-      }
     });
   });
 

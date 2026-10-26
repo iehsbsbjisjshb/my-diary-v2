@@ -51,6 +51,10 @@ function renderCurrentRoute() {
 
   const container = getAppContainer();
   if (container && typeof screen.render === 'function') {
+    container.classList.remove('page-fade-in');
+    void container.offsetWidth; // Force reflow
+    container.classList.add('page-fade-in');
+
     screen.render(container, getState());
   }
 }
