@@ -55,20 +55,20 @@ function escapeHtml(str) {
 
 function getKnownSubjects(state) {
   const subjects = new Set();
-  const base = state.schedule?.base || {};
+  const base = state?.schedule?.base || {};
   Object.values(base).forEach((dayLessons) => {
     (dayLessons || []).forEach((l) => {
-      if (l.subject && l.subject.trim()) subjects.add(l.subject.trim());
+      if (l && l.subject && l.subject.trim()) subjects.add(l.subject.trim());
     });
   });
-  const overrides = state.schedule?.overrides || {};
+  const overrides = state?.schedule?.overrides || {};
   Object.values(overrides).forEach((dayLessons) => {
     (dayLessons || []).forEach((l) => {
-      if (l.subject && l.subject.trim()) subjects.add(l.subject.trim());
+      if (l && l.subject && l.subject.trim()) subjects.add(l.subject.trim());
     });
   });
-  (state.homework || []).forEach((h) => {
-    if (h.subject && h.subject.trim()) subjects.add(h.subject.trim());
+  (state?.homework || []).forEach((h) => {
+    if (h && h.subject && h.subject.trim()) subjects.add(h.subject.trim());
   });
   return Array.from(subjects).sort();
 }
@@ -100,7 +100,7 @@ export function render(container, state) {
         </button>
         <button class="school-tab-btn ${activeTab === 'homework' ? 'active' : ''}" id="tab-homework-btn">
           📚 Домашка
-          ${homework.filter((h) => !h.done).length > 0 ? `<span class="badge-count">${homework.filter((h) => !h.done).length}</span>` : ''}
+          ${homework.filter((h) => h && !h.done).length > 0 ? `<span class="badge-count">${homework.filter((h) => h && !h.done).length}</span>` : ''}
         </button>
       </div>
 
@@ -251,7 +251,10 @@ function renderScheduleTab(schedule, meta) {
                 <span class="day-weekday">${day.dayShort}</span>
                 <span class="day-date">${day.dayOfMonth} ${day.monthName}</span>
               </div>
-              ${day.hasOverride ? `<span class="badge-override-tag" title="Расписание заменено">замена</span>` : ''}
+              <div class="day-header-actions">
+                ${day.hasOverride ? `<span class="badge-override-tag" title="Расписание заменено">замена</span>` : ''}
+                <button type="button" class="btn-day-override" data-override-date="${day.iso}" title="Замена на ${day.dayShort} (${day.dayOfMonth} ${day.monthName})">✏️</button>
+              </div>
             </div>
 
             <div class="schedule-lesson-list">
@@ -395,7 +398,8 @@ function renderHomeworkTab(homework, knownSubjects, meta) {
   const laterHw = [];
   const completedHw = [];
 
-  homework.forEach((h) => {
+  (homework || []).forEach((h) => {
+    if (!h) return;
     if (h.done) {
       completedHw.push(h);
     } else if (h.dueDate && h.dueDate < todayISO) {

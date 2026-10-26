@@ -37,6 +37,18 @@ function updateNavActive(currentHash) {
   });
 }
 
+let lastRenderedRouteKey = null;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderCurrentRoute() {
   const hash = window.location.hash || DEFAULT_ROUTE;
   const routeKey = getRouteKey(hash);
@@ -51,14 +63,30 @@ export function renderCurrentRoute() {
 
   const container = getAppContainer();
   if (container && typeof screen.render === 'function') {
-    container.classList.remove('page-fade-in');
-    void container.offsetWidth; // Force reflow
-    container.classList.add('page-fade-in');
-    container.addEventListener('animationend', () => {
+    // Анимация плавного появления только при реальном переходе между вкладками
+    if (routeKey !== lastRenderedRouteKey) {
       container.classList.remove('page-fade-in');
-    }, { once: true });
+      void container.offsetWidth; // Force reflow
+      container.classList.add('page-fade-in');
+      container.addEventListener('animationend', () => {
+        container.classList.remove('page-fade-in');
+      }, { once: true });
+      lastRenderedRouteKey = routeKey;
+    }
 
-    screen.render(container, getState());
+    try {
+      screen.render(container, getState());
+    } catch (err) {
+      console.error(`Ошибка при отображении раздела ${routeKey}:`, err);
+      container.innerHTML = `
+        <div class="route-error-box" style="padding: 2.5rem 1.5rem; text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">⚠️</div>
+          <h3 style="color: #ef4444; margin-bottom: 0.5rem; font-size: 1.15rem;">Ошибка при отображении раздела</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; max-width: 480px; margin-left: auto; margin-right: auto;">${escapeHtml(err.message || 'Неизвестная ошибка')}</p>
+          <button type="button" class="btn btn-accent btn-sm" onclick="window.location.reload()">Перезагрузить страницу</button>
+        </div>
+      `;
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diary-v2-v17';
+const CACHE_NAME = 'diary-v2-v18';
 
 const STATIC_ASSETS = [
   './',
@@ -18,8 +18,9 @@ const STATIC_ASSETS = [
   './icon-512.svg'
 ];
 
-// Установка: прекэширование всех статических файлов
+// Установка: прекэширование всех статических файлов и немедленный переход к активации
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
@@ -27,7 +28,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Активация: удаление устаревших кэшей и захват клиентов
+// Активация: удаление устаревших кэшей и немедленный захват клиентов
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -69,8 +70,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Навигационные запросы (mode === "navigate") — network-first, в офлайне отдаем index.html
-  if (request.mode === 'navigate') {
+  // 2. Навигация и скрипты/стили — network-first (всегда свежий код, в офлайне из кэша)
+  if (
+    request.mode === 'navigate' ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/')
+  ) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -83,14 +91,15 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cached = await caches.match(request);
           if (cached) return cached;
-          const fallback = await caches.match('./index.html') || await caches.match('index.html');
-          return fallback;
+          if (request.mode === 'navigate') {
+            return (await caches.match('./index.html')) || (await caches.match('index.html'));
+          }
         })
     );
     return;
   }
 
-  // 3. Остальное — cache-first
+  // 3. Остальные ассеты (иконки, манифест) — cache-first
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {

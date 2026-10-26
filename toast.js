@@ -198,6 +198,10 @@ export function showToast(message, options = {}) {
     dismissToast(id);
   });
 
+  // Пауза/возобновление таймеров при наведении на сам тост
+  toast.addEventListener('mouseenter', pauseAllToastTimers);
+  toast.addEventListener('mouseleave', resumeAllToastTimers);
+
   if (duration > 0 && !isContainerHovered) {
     scheduleToastTimer(toastItem);
   }

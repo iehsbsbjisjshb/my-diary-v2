@@ -96,7 +96,7 @@ export function render(container, state) {
   for (let i = 0; i < 7; i++) {
     const dayDate = addDays(currentMondayDate, i);
     const dayISO = formatDateISO(dayDate);
-    const dayTasks = (state.tasks || []).filter((t) => t.date === dayISO);
+    const dayTasks = (state.tasks || []).filter((t) => t && t.date === dayISO);
 
     if (dayISO === todayISO) {
       isTodayInCurrentWeek = true;

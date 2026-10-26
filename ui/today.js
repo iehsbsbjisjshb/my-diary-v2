@@ -130,13 +130,13 @@ export function render(container, state) {
   const wordsPercent = wordsTarget > 0 ? Math.min(100, Math.round((wordsLearned / wordsTarget) * 100)) : 0;
 
   // 2. Просроченные задачи и домашка
-  const overdueTasks = (state.tasks || []).filter((t) => t.date && t.date < todayISO && !t.done);
-  const overdueHomework = (state.homework || []).filter((h) => h.dueDate && h.dueDate < todayISO && !h.done);
+  const overdueTasks = (state.tasks || []).filter((t) => t && t.date && t.date < todayISO && !t.done);
+  const overdueHomework = (state.homework || []).filter((h) => h && h.dueDate && h.dueDate < todayISO && !h.done);
   const hasOverdue = overdueTasks.length > 0 || overdueHomework.length > 0;
 
   // 3. Задачи и домашка на сегодня
-  const todayTasks = (state.tasks || []).filter((t) => t.date === selectedDateISO);
-  const todayHomework = (state.homework || []).filter((h) => h.dueDate === selectedDateISO);
+  const todayTasks = (state.tasks || []).filter((t) => t && t.date === selectedDateISO);
+  const todayHomework = (state.homework || []).filter((h) => h && h.dueDate === selectedDateISO);
 
   const timelineItems = [
     ...todayTasks.map((t) => ({ ...t, itemType: 'task' })),
