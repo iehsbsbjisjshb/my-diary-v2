@@ -1,5 +1,63 @@
 const STORAGE_KEY = 'diary-v2';
 
+export const SCHEDULE_10R_DEFAULT = {
+  '1': [
+    { subject: 'Разговор о важном', room: '408' },
+    { subject: 'Химия', room: '317' },
+    { subject: 'Алгебра', room: '408' },
+    { subject: 'Геометрия', room: '408' },
+    { subject: 'Физика', room: '314' },
+    { subject: 'к.физич.яв.на пр.Удм', room: '314' },
+    { subject: 'Литература', room: '306' }
+  ],
+  '2': [
+    { subject: 'Англ. язык', room: '302/306' },
+    { subject: 'Физика', room: '314' },
+    { subject: 'Алгебра', room: '408' },
+    { subject: 'Геометрия', room: '408' },
+    { subject: 'Русский язык', room: '308' },
+    { subject: 'Обществознание', room: '317' },
+    { subject: 'Физкультура', room: '' }
+  ],
+  '3': [
+    { subject: 'Англ. язык', room: '302/306' },
+    { subject: 'Физика', room: '314' },
+    { subject: 'Обществознание', room: '308' },
+    { subject: 'ОБЗР', room: '405' },
+    { subject: 'к.физич.яв.на пр.Удм', room: '314' },
+    { subject: 'Литература', room: '309' },
+    { subject: 'к.тр.вопр.математики', room: '408' },
+    { subject: 'Инд. проект', room: '408' }
+  ],
+  '4': [
+    { subject: 'Россия-мои горизонты', room: '408' },
+    { subject: 'Русский язык', room: '308' },
+    { subject: 'Геометрия', room: '408' },
+    { subject: 'Алгебра', room: '408' },
+    { subject: 'Физкультура', room: '' },
+    { subject: 'к.тр.вопр.математики', room: '408' },
+    { subject: 'к.черчен.в компас 3D', room: '205' },
+    { subject: 'к.черчен.в компас 3D', room: '402' }
+  ],
+  '5': [
+    { subject: 'Англ. язык', room: '304/306' },
+    { subject: 'Физика', room: '314' },
+    { subject: 'Алгебра', room: '408' },
+    { subject: 'Вер. и статистика', room: '408' },
+    { subject: 'История', room: '206' },
+    { subject: 'Литература', room: '309' }
+  ],
+  '6': [
+    { subject: 'Информатика', room: '302' },
+    { subject: 'Биология', room: '313' },
+    { subject: 'История', room: '206' },
+    { subject: 'Физика', room: '314' },
+    { subject: 'География', room: '406' },
+    { subject: 'инд.пр/информ', room: '314/302' }
+  ],
+  '7': []
+};
+
 export const DEFAULT_STATE = {
   version: 2,
   updatedAt: new Date().toISOString(),
@@ -21,15 +79,7 @@ export const DEFAULT_STATE = {
     history: {}
   },
   schedule: {
-    base: {
-      '1': [],
-      '2': [],
-      '3': [],
-      '4': [],
-      '5': [],
-      '6': [],
-      '7': []
-    },
+    base: JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT)),
     overrides: {},
     bells: []
   },
@@ -59,6 +109,33 @@ export function getState() {
         updatedAt: new Date().toISOString()
       };
     }
+
+    const rawBase = (parsed.schedule?.base && typeof parsed.schedule.base === 'object')
+      ? parsed.schedule.base
+      : DEFAULT_STATE.schedule.base;
+
+    const base = {
+      '1': Array.isArray(rawBase['1']) ? rawBase['1'] : [],
+      '2': Array.isArray(rawBase['2']) ? rawBase['2'] : [],
+      '3': Array.isArray(rawBase['3']) ? rawBase['3'] : [],
+      '4': Array.isArray(rawBase['4']) ? rawBase['4'] : [],
+      '5': Array.isArray(rawBase['5']) ? rawBase['5'] : [],
+      '6': Array.isArray(rawBase['6']) ? rawBase['6'] : [],
+      '7': Array.isArray(rawBase['7']) ? rawBase['7'] : []
+    };
+
+    // Если базовое расписание пустое — автоматически инициализируем шаблоном 10Р
+    const hasLessons = Object.values(base).some((arr) => arr.length > 0);
+    if (!hasLessons) {
+      base['1'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['1']));
+      base['2'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['2']));
+      base['3'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['3']));
+      base['4'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['4']));
+      base['5'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['5']));
+      base['6'] = JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT['6']));
+      base['7'] = [];
+    }
+
     return {
       ...DEFAULT_STATE,
       ...parsed,
@@ -75,10 +152,7 @@ export function getState() {
       schedule: {
         ...DEFAULT_STATE.schedule,
         ...(parsed.schedule && typeof parsed.schedule === 'object' ? parsed.schedule : {}),
-        base: {
-          ...DEFAULT_STATE.schedule.base,
-          ...(parsed.schedule?.base && typeof parsed.schedule.base === 'object' ? parsed.schedule.base : {})
-        },
+        base,
         overrides: { ...(parsed.schedule?.overrides && typeof parsed.schedule.overrides === 'object' ? parsed.schedule.overrides : {}) },
         bells: Array.isArray(parsed.schedule?.bells) ? parsed.schedule.bells : []
       },
@@ -146,7 +220,7 @@ export function onStateChange(fn) {
 
 // Доступ из глобальной области для отладки в консоли
 if (typeof window !== 'undefined') {
-  window.storage = { getState, setState, resetState, onStateChange, DEFAULT_STATE };
+  window.storage = { getState, setState, resetState, onStateChange, DEFAULT_STATE, SCHEDULE_10R_DEFAULT };
   window.getState = getState;
   window.setState = setState;
   window.resetState = resetState;

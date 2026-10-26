@@ -1,4 +1,4 @@
-import { getState, setState } from '../storage.js';
+import { getState, setState, SCHEDULE_10R_DEFAULT } from '../storage.js';
 import { showToast } from '../toast.js';
 
 let activeTab = 'schedule'; // 'schedule' | 'homework'
@@ -190,7 +190,7 @@ function renderScheduleTab(schedule, meta) {
                         (l, idx) => `
                     <div class="lesson-row">
                       <span class="lesson-num">${idx + 1}</span>
-                      <span class="lesson-time">${escapeHtml(l.time || '—')}</span>
+                      <span class="lesson-time">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : '—'))}</span>
                       <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                       <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
                       <button class="btn-delete-lesson" data-delete-override-idx="${idx}" title="Удалить">✕</button>
@@ -247,7 +247,7 @@ function renderScheduleTab(schedule, meta) {
                         (l, idx) => `
                     <div class="schedule-lesson-card">
                       <div class="lesson-top-line">
-                        <span class="lesson-time-pill">${escapeHtml(l.time || `#${idx + 1}`)}</span>
+                        <span class="lesson-time-pill">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : `#${idx + 1}`))}</span>
                         ${l.room ? `<span class="lesson-room-tag">каб. ${escapeHtml(l.room)}</span>` : ''}
                       </div>
                       <div class="lesson-subject-name">${escapeHtml(l.subject)}</div>
@@ -281,7 +281,12 @@ function renderScheduleTab(schedule, meta) {
             </div>
 
             <div class="base-day-editor">
-              <h4>${DAYS_FULL_RU[parseInt(activeBaseDay, 10) - 1]} (базовое)</h4>
+              <div class="base-day-header-row">
+                <h4>${DAYS_FULL_RU[parseInt(activeBaseDay, 10) - 1]} (базовое)</h4>
+                <button type="button" class="btn btn-secondary btn-xs btn-reset-10r" id="btn-reset-10r-template" title="Восстановить базовое расписание 10Р">
+                  🔄 Загрузить расписание 10Р
+                </button>
+              </div>
 
               <!-- Список уроков базового дня -->
               <div class="base-lessons-list">
@@ -293,7 +298,7 @@ function renderScheduleTab(schedule, meta) {
                           (l, idx) => `
                       <div class="lesson-row">
                         <span class="lesson-num">${idx + 1}</span>
-                        <span class="lesson-time">${escapeHtml(l.time || '—')}</span>
+                        <span class="lesson-time">${escapeHtml(l.time || (bellsMap.get(idx + 1) ? `${bellsMap.get(idx + 1).start}–${bellsMap.get(idx + 1).end}` : '—'))}</span>
                         <span class="lesson-subject">${escapeHtml(l.subject)}</span>
                         <span class="lesson-room">${l.room ? `каб. ${escapeHtml(l.room)}` : ''}</span>
                         <button class="btn-delete-lesson" data-delete-base-day="${activeBaseDay}" data-delete-base-idx="${idx}" title="Удалить">✕</button>
@@ -557,6 +562,56 @@ function attachEventListeners(container, state, meta) {
   });
 
   if (activeTab === 'schedule') {
+    // Быстрая замена по клику на день недели
+    container.querySelectorAll('.btn-day-override').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetDate = btn.getAttribute('data-override-date');
+        activeOverrideDate = targetDate;
+        showOverrideEditor = true;
+
+        const currentState = getState();
+        const currentOverrides = currentState.schedule?.overrides || {};
+        if (!currentOverrides[targetDate]) {
+          const d = parseLocalDate(targetDate);
+          const dayNum = d.getDay();
+          const baseKey = String(dayNum === 0 ? 7 : dayNum);
+          const baseLessons = currentState.schedule?.base?.[baseKey] || [];
+          if (baseLessons.length > 0) {
+            setState((prev) => ({
+              ...prev,
+              schedule: {
+                ...(prev.schedule || {}),
+                overrides: {
+                  ...(prev.schedule?.overrides || {}),
+                  [targetDate]: JSON.parse(JSON.stringify(baseLessons))
+                }
+              }
+            }));
+            showToast(`Замена на ${targetDate} скопирована из базы`, { type: 'info' });
+            return;
+          }
+        }
+        render(container, getState());
+        container.querySelector('.override-editor-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+
+    // Загрузить / восстановить расписание 10Р
+    container.querySelector('#btn-reset-10r-template')?.addEventListener('click', () => {
+      if (!confirm('Загрузить базовое расписание 10Р на всю неделю (Пн–Сб)? Текущее базовое расписание будет заменено.')) {
+        return;
+      }
+      setState((prev) => ({
+        ...prev,
+        schedule: {
+          ...(prev.schedule || {}),
+          base: JSON.parse(JSON.stringify(SCHEDULE_10R_DEFAULT))
+        }
+      }));
+      showToast('Базовое расписание 10Р загружено!', { type: 'success' });
+    });
+
     // Кнопка открытия/закрытия редактора оверрайда
     container.querySelector('#btn-toggle-override-editor')?.addEventListener('click', () => {
       showOverrideEditor = !showOverrideEditor;
