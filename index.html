@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#8b5cf6">
+  <title>Ежедневник</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon-192.svg">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-container">
+      <h1 class="app-title">Ежедневник</h1>
+      <nav class="app-nav" aria-label="Основная навигация">
+        <a href="#/today" class="nav-link" data-route="#/today">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Сегодня</span>
+        </a>
+        <a href="#/week" class="nav-link" data-route="#/week">
+          <span class="nav-icon">🗓️</span>
+          <span class="nav-label">Неделя</span>
+        </a>
+        <a href="#/school" class="nav-link" data-route="#/school">
+          <span class="nav-icon">🏫</span>
+          <span class="nav-label">Школа</span>
+        </a>
+        <a href="#/notes" class="nav-link" data-route="#/notes">
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">Заметки</span>
+        </a>
+        <a href="#/settings" class="nav-link" data-route="#/settings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Настройки</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="app-content"></main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

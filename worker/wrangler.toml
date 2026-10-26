@@ -1,0 +1,11 @@
+name = "diary-sync"
+main = "main.ts"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "STATE_KV"
+id = "d1a58eae8c4b4350959b94a235ad0fd8"
+preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+
+[vars]
+ALLOWED_ORIGIN = "*"

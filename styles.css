@@ -1,0 +1,2345 @@
+:root {
+  --bg-color: #0b0b0f;
+  --surface-color: #16161f;
+  --surface-hover: #222230;
+  --accent-color: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-subtle: rgba(139, 92, 246, 0.15);
+  --text-main: #e5e5e5;
+  --text-muted: #9ca3af;
+  --border-color: #272733;
+  --touch-size: 44px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Шапка приложения */
+.app-header {
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-size);
+  min-width: var(--touch-size);
+  padding: 0 1rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+
+.nav-link:hover {
+  color: var(--text-main);
+  background-color: var(--surface-hover);
+}
+
+.nav-link.active {
+  color: #ffffff;
+  background-color: var(--accent-color);
+}
+
+.app-content {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+
+.app-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+/* Базовые кнопки */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-size);
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background-color: var(--surface-hover);
+}
+
+.btn-accent {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #ffffff;
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+.btn-secondary:hover {
+  color: var(--text-main);
+  background-color: var(--surface-hover);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Экран «Неделя» */
+.week-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Панель переключения недель */
+.week-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.week-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-nav {
+  min-width: var(--touch-size);
+  font-size: 1.25rem;
+  padding: 0 0.75rem;
+}
+
+.week-title-range {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.btn-today {
+  min-height: var(--touch-size);
+}
+
+/* Баннер планирования недели */
+.week-plan-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.week-plan-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fcd34d;
+  font-size: 0.95rem;
+}
+
+.week-plan-icon {
+  font-size: 1.1rem;
+}
+
+/* Сетка колонок недели */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.day-col {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 340px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.day-col.day-today {
+  border-color: var(--accent-color);
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.day-col.drag-over {
+  border: 2px dashed var(--accent-color);
+  background-color: rgba(139, 92, 246, 0.15);
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.day-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-weekday {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.day-today .day-weekday {
+  color: var(--accent-color);
+}
+
+.day-date {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.btn-add-task {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-main);
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-add-task:hover {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+/* Список задач дня */
+.day-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 60px;
+}
+
+/* Карточка задачи */
+.task-card {
+  background-color: #1a1a26;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: grab;
+  user-select: none;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+.task-card.is-dragging {
+  opacity: 0.35;
+  border-color: var(--accent-color);
+}
+
+.task-card.task-done {
+  opacity: 0.55;
+  background-color: #14141e;
+}
+
+.task-card.task-done .task-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.task-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.task-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.task-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.task-content-clickable {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.task-header-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.task-time-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  background-color: rgba(139, 92, 246, 0.2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.task-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.chip-chinese {
+  background-color: #451a03;
+  color: #fb923c;
+  border-color: #7c2d12;
+}
+
+.chip-homework {
+  background-color: #172554;
+  color: #60a5fa;
+  border-color: #1e40af;
+}
+
+.chip-school {
+  background-color: #064e3b;
+  color: #34d399;
+  border-color: #065f46;
+}
+
+.chip-personal {
+  background-color: #312e81;
+  color: #c4b5fd;
+  border-color: #4338ca;
+}
+
+.task-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.task-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+.btn-task-action {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.btn-task-action:hover {
+  opacity: 1;
+  color: #ef4444;
+}
+
+/* Инлайн форма задачи */
+.task-inline-form {
+  background-color: #1a1a28;
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  padding: 0.65rem;
+  margin-bottom: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.form-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.form-col-full {
+  flex: 100%;
+}
+
+.form-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.form-input {
+  background-color: #111118;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-main);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  border-color: var(--accent-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Экран «Сегодня»
+   ========================================================================== */
+.today-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.today-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 1. Цели и китайский язык */
+.goals-chinese-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .goals-chinese-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.goals-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.section-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-color);
+}
+
+.goals-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.goal-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.goal-num {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.goal-title {
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.goal-deadline {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Виджет китайского языка */
+.chinese-widget {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chinese-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #fbbf24;
+}
+
+.fire-icon {
+  font-size: 1.1rem;
+}
+
+.progress-block, .words-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.progress-labels, .words-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.btn-words-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-hover);
+  color: var(--text-main);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background-color: #111118;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.track-words {
+  height: 6px;
+}
+
+.fill-words {
+  background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+}
+
+/* 3. Блок «Просрочено» */
+.overdue-section {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.overdue-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f87171;
+}
+
+.overdue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.overdue-item {
+  background-color: #1a141b;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.overdue-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.overdue-date {
+  font-size: 0.75rem;
+  color: #f87171;
+  font-weight: 600;
+}
+
+.overdue-title-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.overdue-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-overdue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  color: var(--text-main);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-overdue-done {
+  border-color: #059669;
+  color: #34d399;
+}
+.btn-overdue-done:hover {
+  background-color: rgba(5, 150, 105, 0.15);
+}
+
+.btn-overdue-tomorrow {
+  border-color: #2563eb;
+  color: #60a5fa;
+}
+.btn-overdue-tomorrow:hover {
+  background-color: rgba(37, 99, 235, 0.15);
+}
+
+.btn-overdue-delete {
+  border-color: #dc2626;
+  color: #f87171;
+}
+.btn-overdue-delete:hover {
+  background-color: rgba(220, 38, 38, 0.15);
+}
+
+/* 2. Таймлайн дня */
+.timeline-section {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.timeline-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.timeline-date-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.timeline-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timeline-card {
+  background-color: #1a1a26;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.timeline-card-done {
+  opacity: 0.6;
+  background-color: #13131c;
+}
+
+.timeline-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a78bfa;
+  min-width: 48px;
+  text-align: center;
+}
+
+.timeline-body {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.today-item-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.timeline-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.title-done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.completed-details {
+  margin-top: 1rem;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 0.75rem;
+}
+
+.completed-summary {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.5rem;
+}
+
+/* 4. Разбор дня */
+.review-section {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+}
+
+.review-details {
+  padding: 0.25rem 0;
+}
+
+.review-summary {
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.5rem 0;
+}
+
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.review-stats {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.saved-review-box {
+  background-color: #12121a;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.saved-review-note {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #d1d5db;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.review-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.review-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Модальные окна */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.modal-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.modal-input {
+  font-size: 1.1rem;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+}
+
+.quick-minutes-chips {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  flex-wrap: wrap;
+}
+
+.btn-chip, .btn-words-chip {
+  flex: 1;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: #12121a;
+  color: var(--text-main);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-chip:hover, .btn-words-chip:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--accent-color);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* ==========================================================================
+   Экран «Школа»
+   ========================================================================== */
+.school-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Переключатель вкладок */
+.school-tab-bar {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.school-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--touch-size);
+  padding: 0 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: var(--surface-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.school-tab-btn:hover {
+  color: var(--text-main);
+  background-color: var(--surface-hover);
+}
+
+.school-tab-btn.active {
+  color: #ffffff;
+  background-color: var(--accent-color);
+}
+
+.badge-count {
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* Вкладка «Расписание» */
+.schedule-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.schedule-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.schedule-title-block h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.schedule-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Редактор оверрайда на дату */
+.override-editor-box {
+  background-color: #171524;
+  border: 1px solid var(--accent-color);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.override-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.override-editor-header h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.override-date-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-date-input {
+  max-width: 170px;
+}
+
+.badge-status-override {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: #c4b5fd;
+  background-color: rgba(139, 92, 246, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.badge-status-base {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.override-lessons-list, .base-lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.empty-lessons-msg {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.lesson-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: #12121c;
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.lesson-num {
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 20px;
+}
+
+.lesson-time {
+  font-size: 0.8rem;
+  color: #a78bfa;
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.lesson-subject {
+  font-weight: 500;
+  flex: 1;
+}
+
+.lesson-room {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn-delete-lesson, .btn-delete-bell {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.btn-delete-lesson:hover, .btn-delete-bell:hover {
+  color: #ef4444;
+}
+
+.add-lesson-form, .add-bell-form {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.override-box-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Сетка недели расписания */
+.schedule-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.schedule-day-col {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 200px;
+}
+
+.schedule-day-col.day-today {
+  border-color: var(--accent-color);
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.schedule-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.4rem;
+}
+
+.badge-override-tag {
+  font-size: 0.65rem;
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.schedule-lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.no-lessons {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 0.5rem 0;
+  text-align: center;
+}
+
+.schedule-lesson-card {
+  background-color: #1a1a26;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.45rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lesson-top-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.lesson-time-pill {
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.lesson-room-tag {
+  color: var(--text-muted);
+}
+
+.lesson-subject-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Блоки управления: База и Звонки */
+.schedule-management-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.school-details {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+}
+
+.school-details-summary {
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.25rem 0;
+}
+
+.school-details-content {
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.base-day-selector {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.btn-base-day {
+  min-height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: #12121a;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-base-day.active {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+.base-day-editor h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.bells-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bell-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #12121c;
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.bell-num {
+  font-weight: 700;
+  color: #a78bfa;
+}
+
+.bell-time {
+  flex: 1;
+}
+
+/* Вкладка «Домашка» */
+.homework-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.add-homework-form {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hw-form-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.hw-form-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 160px;
+}
+
+.hw-col-full {
+  flex: 100%;
+}
+
+.homework-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.hw-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.hw-group-header h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.hw-group-overdue .hw-group-header h3 {
+  color: #f87171;
+}
+
+.hw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hw-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+}
+
+.hw-item {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hw-item-overdue {
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.hw-item-done {
+  opacity: 0.6;
+}
+
+.hw-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 220px;
+}
+
+.hw-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.hw-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.hw-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hw-subject-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.hw-due-badge {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.due-overdue {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.hw-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.hw-title-done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.hw-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-reschedule {
+  font-size: 0.8rem;
+}
+
+.btn-delete-hw {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.btn-delete-hw:hover {
+  color: #ef4444;
+}
+
+.hw-reschedule-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background-color: #12121c;
+  border: 1px solid var(--accent-color);
+  border-radius: 6px;
+  margin-top: 0.4rem;
+}
+
+.hw-reschedule-box label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.reschedule-date-input {
+  max-width: 160px;
+}
+
+.hw-completed-details {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 0.75rem;
+}
+
+.hw-completed-summary {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .schedule-week-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Экран «Настройки»
+   ========================================================================== */
+.settings-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.settings-alert-success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #34d399;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.alert-close-btn {
+  background: transparent;
+  border: none;
+  color: #34d399;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 4px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.settings-subtext {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.settings-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.settings-input {
+  max-width: 260px;
+}
+
+.settings-backup-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Опасная зона: Сброс данных */
+.danger-zone-card {
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.danger-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.danger-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.danger-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.danger-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f87171;
+}
+
+.danger-desc {
+  font-size: 0.88rem;
+  color: #d1d5db;
+  line-height: 1.45;
+}
+
+.danger-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Модалка подтверждения сброса */
+.modal-card-danger {
+  border-color: rgba(239, 68, 68, 0.5);
+  max-width: 460px;
+}
+
+.modal-body-danger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.danger-alert-box {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.reset-prompt-text {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.confirm-word-badge {
+  background-color: #ef4444;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: monospace;
+}
+
+.reset-confirm-input {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 0.6rem;
+}
+
+.btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Экран «Заметки»
+   ========================================================================== */
+.notes-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.note-inline-form {
+  background-color: var(--surface-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.note-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.45;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notes-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.note-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: border-color 0.15s;
+}
+
+.note-card:hover {
+  border-color: #3b3b4f;
+}
+
+.note-card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.note-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.note-text {
+  font-size: 0.9rem;
+  color: #d1d5db;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.note-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.note-actions {
+  flex-shrink: 0;
+}
+
+.btn-delete-note {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.btn-delete-note:hover {
+  opacity: 1;
+  color: #ef4444;
+}
+
+/* Дополнительные стили для экрана «Настройки» */
+.settings-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.goals-management-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.goal-manage-item {
+  background-color: #12121a;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.goal-manage-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.goal-manage-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.goal-manage-deadline {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.goal-manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-delete-goal {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+}
+
+.btn-delete-goal:hover {
+  color: #ef4444;
+}
+
+.goal-inline-form {
+  background-color: #1a1a28;
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sync-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.sync-status-box {
+  background-color: #12121a;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sync-status-line {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.sync-status-msg {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #a78bfa;
+}
+
+.about-card {
+  background-color: #111118;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.about-app-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.about-app-version {
+  font-size: 0.85rem;
+  color: #c4b5fd;
+}
+
+.about-app-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 900px) {
+  .week-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .day-col {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  body {
+    padding-bottom: calc(60px + 1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .header-container {
+    justify-content: center;
+    padding: 0.6rem 1rem;
+  }
+
+  .app-header {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .app-title {
+    font-size: 1.15rem;
+  }
+
+  /* Нижняя навигация на мобильном */
+  .app-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    padding: 0 0.25rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+
+  .nav-link {
+    flex: 1;
+    min-height: 48px;
+    min-width: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 2px;
+    font-size: 0.72rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .nav-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .nav-label {
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  /* Адаптив блоков под ширину 360px */
+  .app-content {
+    padding: 0.75rem 0.6rem;
+    overflow-x: hidden;
+  }
+
+  .overdue-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .overdue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    width: 100%;
+  }
+
+  .overdue-actions .btn-overdue {
+    flex: 1;
+    min-width: 80px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 0 0.5rem;
+  }
+
+  .settings-backup-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .settings-backup-actions .btn,
+  .settings-backup-actions label {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .sync-actions-row {
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .sync-actions-row .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .hw-item-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hw-item-actions .btn {
+    min-height: 44px;
+  }
+}
+
+/* Десктопная навигация */
+@media (min-width: 641px) {
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.85rem;
+  }
+
+  .nav-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .nav-label {
+    font-size: 0.95rem;
+  }
+}
+
+/* Тач-таргеты ≥ 44px и доступность */
+button,
+.btn,
+.nav-link,
+.form-input,
+.task-checkbox-label,
+.modal-close,
+.btn-task-action,
+.btn-delete-hw,
+.btn-delete-note,
+.btn-delete-goal {
+  min-height: var(--touch-size);
+  box-sizing: border-box;
+}
+
+.task-checkbox-label {
+  min-width: var(--touch-size);
+  min-height: var(--touch-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-task-action,
+.btn-delete-hw,
+.btn-delete-note,
+.btn-delete-goal,
+.modal-close {
+  min-width: var(--touch-size);
+  min-height: var(--touch-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Деактивированные кнопки в формах */
+button:disabled,
+.btn:disabled,
+.btn-disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Универсальный тост-компонент (короткий, снизу) */
+.app-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  max-width: 420px;
+  animation: appToastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.app-toast-success {
+  border-color: #10b981;
+}
+
+.app-toast-error {
+  border-color: #ef4444;
+}
+
+.app-toast-info {
+  border-color: var(--accent-color);
+}
+
+.app-toast-hiding {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.app-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-toast-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.app-toast-action {
+  white-space: nowrap;
+  min-height: 38px;
+}
+
+.app-toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border-radius: 6px;
+}
+
+.app-toast-close:hover {
+  color: var(--text-main);
+  background-color: var(--surface-hover);
+}
+
+@keyframes appToastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(60px + 12px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100% - 2rem);
+  }
+}
