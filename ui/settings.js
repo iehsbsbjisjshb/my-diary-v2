@@ -46,7 +46,7 @@ export function render(container, state) {
           <div class="settings-card-header-row">
             <div>
               <h3>🎯 Главные цели</h3>
-              <p class="settings-subtext">Отображаются в шапке главного экрана «Сегодня»</p>
+              <p class="settings-subtext">Отображаются в шапке главного экрана «Распорядок»</p>
             </div>
             ${
               !isAddingGoal && !editingGoalId

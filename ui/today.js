@@ -1,6 +1,7 @@
 import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
 
+let selectedDate = new Date();
 let isEditingReview = false;
 let activeModal = null; // 'study' | null
 let activeTaskModal = null; // null | { isNew: boolean, id?: string, date: string, title: string, time: string, duration: number|string, category: string, note: string }
@@ -9,6 +10,25 @@ let isReviewUserToggled = false;
 let isReviewOpen = false;
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const DAYS_FULL_RU = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+const MONTHS_FULL_RU = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+function parseLocalDate(str) {
+  if (!str) return new Date();
+  const parts = str.split('-').map(Number);
+  if (parts.length === 3) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  return new Date(str);
+}
+
+function formatFullDateWithDayName(d) {
+  const dayName = DAYS_FULL_RU[d.getDay()] || '';
+  const day = d.getDate();
+  const month = MONTHS_FULL_RU[d.getMonth()] || '';
+  const year = d.getFullYear();
+  return `${dayName}, ${day} ${month} ${year}`;
+}
 
 function formatShortDate(isoStr) {
   if (!isoStr) return '';
@@ -65,6 +85,8 @@ function escapeHtml(str) {
 export function render(container, state) {
   const now = new Date();
   const todayISO = formatDateISO(now);
+  const selectedDateISO = formatDateISO(selectedDate);
+  const isViewingToday = selectedDateISO === todayISO;
   const yesterdayISO = formatDateISO(addDays(now, -1));
   const tomorrowISO = formatDateISO(addDays(now, 1));
   const isEvening = now.getHours() >= 20;
@@ -82,6 +104,7 @@ export function render(container, state) {
   };
 
   const todayMinutes = (chinese.history && chinese.history[todayISO]) || 0;
+  const selectedDayMinutes = (chinese.history && chinese.history[selectedDateISO]) || 0;
   const dailyGoal = chinese.dailyGoalMinutes || 60;
   const minutesPercent = Math.min(100, Math.round((todayMinutes / dailyGoal) * 100));
 
@@ -100,8 +123,8 @@ export function render(container, state) {
   const hasOverdue = overdueTasks.length > 0 || overdueHomework.length > 0;
 
   // 3. Задачи и домашка на сегодня
-  const todayTasks = (state.tasks || []).filter((t) => t.date === todayISO);
-  const todayHomework = (state.homework || []).filter((h) => h.dueDate === todayISO);
+  const todayTasks = (state.tasks || []).filter((t) => t.date === selectedDateISO);
+  const todayHomework = (state.homework || []).filter((h) => h.dueDate === selectedDateISO);
 
   const timelineItems = [
     ...todayTasks.map((t) => ({ ...t, itemType: 'task' })),
@@ -140,7 +163,7 @@ export function render(container, state) {
   }
 
   // 5. Разбор дня (reviews)
-  const todayReview = (state.reviews || []).find((r) => r.date === todayISO);
+  const todayReview = (state.reviews || []).find((r) => r.date === selectedDateISO);
   const defaultReviewOpen = isEvening || !!todayReview;
   const currentReviewOpen = isReviewUserToggled ? isReviewOpen : defaultReviewOpen;
 
@@ -277,8 +300,20 @@ export function render(container, state) {
       <section class="today-section timeline-section">
         <div class="timeline-header">
           <div class="timeline-header-left">
-            <h2>План на сегодня</h2>
-            <span class="timeline-date-label">${now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <div class="timeline-title-row">
+              <h2>Распорядок дня</h2>
+              ${isViewingToday ? '<span class="day-today-tag">Сегодня</span>' : ''}
+            </div>
+            <div class="day-nav-toolbar">
+              <button class="btn btn-day-nav" id="day-prev" aria-label="Предыдущий день" title="Предыдущий день">←</button>
+              <label class="day-picker-label" title="Нажмите, чтобы выбрать дату">
+                <span class="day-picker-calendar-icon">📅</span>
+                <span class="day-nav-date-text">${formatFullDateWithDayName(selectedDate)}</span>
+                <input type="date" class="day-picker-input" id="day-picker-input" value="${selectedDateISO}" />
+              </label>
+              <button class="btn btn-day-nav" id="day-next" aria-label="Следующий день" title="Следующий день">→</button>
+              ${!isViewingToday ? '<button class="btn btn-today btn-day-today" id="btn-day-today">Сегодня</button>' : ''}
+            </div>
           </div>
           <button class="btn btn-accent btn-sm" id="btn-today-add-task">+ Новая задача</button>
         </div>
@@ -286,7 +321,7 @@ export function render(container, state) {
         ${
           timelineItems.length === 0
             ? `
-            <div class="timeline-empty">На сегодня пока нет задач.</div>
+            <div class="timeline-empty">${isViewingToday ? 'На сегодня пока нет задач.' : `На ${formatShortDate(selectedDateISO)} задач нет.`}</div>
             `
             : `
             <div class="timeline-list">
@@ -413,7 +448,7 @@ export function render(container, state) {
   `;
 
   document.body.classList.toggle('modal-open', Boolean(activeModal || activeTaskModal));
-  attachEventListeners(container, state, { todayISO, yesterdayISO, tomorrowISO, todayDoneCount });
+  attachEventListeners(container, state, { todayISO, selectedDateISO, isViewingToday, yesterdayISO, tomorrowISO, todayDoneCount });
 }
 
 function renderTimelineCard(item) {
@@ -542,7 +577,33 @@ function renderTodayTaskModalHtml(fields) {
 }
 
 function attachEventListeners(container, state, meta) {
-  const { todayISO, yesterdayISO, tomorrowISO, todayDoneCount } = meta;
+  const { todayISO, selectedDateISO, isViewingToday, yesterdayISO, tomorrowISO, todayDoneCount } = meta;
+
+  // Навигация по дням: Предыдущий день
+  container.querySelector('#day-prev')?.addEventListener('click', () => {
+    selectedDate = addDays(selectedDate, -1);
+    render(container, getState());
+  });
+
+  // Навигация по дням: Следующий день
+  container.querySelector('#day-next')?.addEventListener('click', () => {
+    selectedDate = addDays(selectedDate, 1);
+    render(container, getState());
+  });
+
+  // Навигация по дням: Вернуться на Сегодня
+  container.querySelector('#btn-day-today')?.addEventListener('click', () => {
+    selectedDate = new Date();
+    render(container, getState());
+  });
+
+  // Навигация по дням: Выбор даты через встроенный datepicker
+  container.querySelector('#day-picker-input')?.addEventListener('change', (e) => {
+    if (e.target.value) {
+      selectedDate = parseLocalDate(e.target.value);
+      render(container, getState());
+    }
+  });
 
   // Escape key handler
   const onKeyDown = (e) => {
@@ -562,7 +623,7 @@ function attachEventListeners(container, state, meta) {
   const openNewTaskModal = () => {
     activeTaskModal = {
       isNew: true,
-      date: todayISO,
+      date: selectedDateISO,
       title: '',
       time: '',
       duration: '',
@@ -1000,10 +1061,10 @@ function attachEventListeners(container, state, meta) {
 
     setState((prev) => {
       const reviews = [...(prev.reviews || [])];
-      const existingIdx = reviews.findIndex((r) => r.date === todayISO);
+      const existingIdx = reviews.findIndex((r) => r.date === selectedDateISO);
 
       const reviewEntry = {
-        date: todayISO,
+        date: selectedDateISO,
         doneCount: todayDoneCount,
         note
       };
