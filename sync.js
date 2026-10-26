@@ -1,10 +1,21 @@
+import { getState, setState } from './storage.js';
+
 let pushTimeoutId = null;
 let pendingPushState = null;
+let isInitialLoadComplete = false;
 
 export function isConfigured() {
   const url = localStorage.getItem('syncUrl');
   const secret = localStorage.getItem('syncSecret');
   return Boolean(url && url.trim() && secret && secret.trim());
+}
+
+export function isInitialLoadDone() {
+  return isInitialLoadComplete;
+}
+
+export function setInitialLoadComplete(value = true) {
+  isInitialLoadComplete = Boolean(value);
 }
 
 export function getSyncEndpoint() {
@@ -45,7 +56,60 @@ export async function pull() {
   }
 }
 
+/**
+ * pullAndMerge:
+ * Выполняет GET запрос к Cloudflare Worker.
+ * Если ответ 200 и пришел валидный JSON (не пустой объект),
+ * полностью заменяет локальный state данными с сервера,
+ * сохраняет их в localStorage и вызывает глобальное обновление UI.
+ */
+export async function pullAndMerge() {
+  if (!isConfigured()) return false;
+  const endpoint = getSyncEndpoint();
+  const secret = getSyncSecret();
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'X-Sync-Secret': secret
+      }
+    });
+
+    if (res.status === 200) {
+      const remote = await res.json();
+      if (remote && typeof remote === 'object' && Object.keys(remote).length > 0) {
+        // Заменяем локальный state данными с сервера
+        localStorage.setItem('diary-v2', JSON.stringify(remote));
+        const normalized = getState();
+        setState(() => normalized, { preserveUpdatedAt: true, fromRemote: true });
+        localStorage.setItem('syncLastSync', new Date().toISOString());
+
+        // Глобальное обновление UI
+        if (typeof window !== 'undefined' && typeof window.renderCurrentRoute === 'function') {
+          window.renderCurrentRoute();
+        }
+
+        return true;
+      } else {
+        console.warn('Sync pullAndMerge: пустой объект или нет данных на сервере');
+        return false;
+      }
+    } else {
+      console.warn(`Sync pullAndMerge HTTP ${res.status}`);
+      return false;
+    }
+  } catch (err) {
+    console.warn('Sync pullAndMerge error:', err);
+    return false;
+  }
+}
+
 async function executePush(state) {
+  if (!isInitialLoadComplete) {
+    console.warn('Sync push blocked: initial load is not complete');
+    return false;
+  }
   if (!isConfigured() || !state) return false;
   const endpoint = getSyncEndpoint();
   const secret = getSyncSecret();
@@ -74,6 +138,11 @@ async function executePush(state) {
 }
 
 export function push(state, immediate = false) {
+  if (!isInitialLoadComplete) {
+    console.warn('Sync push blocked: initial load is not complete');
+    return Promise.resolve(false);
+  }
+
   pendingPushState = state;
 
   if (immediate) {
@@ -98,5 +167,9 @@ export function push(state, immediate = false) {
 }
 
 export async function pushImmediate(state) {
+  if (!isInitialLoadComplete) {
+    console.warn('Sync pushImmediate blocked: initial load is not complete');
+    return false;
+  }
   return push(state, true);
 }

@@ -1,5 +1,5 @@
 import { getState, setState, resetState } from '../storage.js';
-import { isConfigured, pull, pushImmediate } from '../sync.js';
+import { isConfigured, pullAndMerge, pushImmediate, setInitialLoadComplete } from '../sync.js';
 import { showToast } from '../toast.js';
 
 let isAddingGoal = false;
@@ -268,8 +268,8 @@ async function handleManualSync(container) {
   const url = (container.querySelector('#sync-url')?.value || '').trim();
   const secret = (container.querySelector('#sync-secret')?.value || '').trim();
 
-  localStorage.setItem('syncUrl', url);
-  localStorage.setItem('syncSecret', secret);
+  if (url) localStorage.setItem('syncUrl', url);
+  if (secret) localStorage.setItem('syncSecret', secret);
 
   if (!isConfigured()) {
     syncStatusMessage = '❌ Укажите URL воркера и секретный ключ';
@@ -279,51 +279,23 @@ async function handleManualSync(container) {
   }
 
   isSyncing = true;
-  syncStatusMessage = 'Подключение к серверу...';
+  syncStatusMessage = 'Синхронизация с сервером...';
   render(container, getState());
 
   try {
-    const remote = await pull();
-    const local = getState();
-
-    if (remote === null) {
-      syncStatusMessage = '❌ Синхронизация не удалась (ошибка сервера или невалидный JSON)';
-      showToast('Синхронизация не удалась', { type: 'error' });
-      return;
-    }
-
-    if (typeof remote !== 'object' || Object.keys(remote).length === 0) {
-      // На сервере пусто — отправляем локальный state
-      const success = await pushImmediate(local);
-      if (success) {
-        localStorage.setItem('syncLastSync', new Date().toISOString());
-        syncStatusMessage = `✓ Синхронизация успешна (данные сохранены на сервере в ${new Date().toLocaleTimeString('ru-RU')})`;
-        showToast('Синхронизировано', { type: 'success' });
-      } else {
-        syncStatusMessage = '❌ Ошибка отправки на сервер';
-        showToast('Синхронизация не удалась', { type: 'error' });
-      }
+    const merged = await pullAndMerge();
+    if (merged) {
+      syncStatusMessage = `✓ Синхронизация успешна (${new Date().toLocaleTimeString('ru-RU')})`;
+      showToast('Синхронизировано', { type: 'success' });
     } else {
-      const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-      const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-
-      if (remoteTime > localTime) {
-        // Сервер свежее
-        setState(() => remote, { preserveUpdatedAt: true, fromRemote: true });
-        localStorage.setItem('syncLastSync', new Date().toISOString());
-        syncStatusMessage = `✓ Синхронизация успешна (получены свежие данные: ${new Date(remote.updatedAt).toLocaleTimeString('ru-RU')})`;
-        showToast('Синхронизировано', { type: 'success' });
+      // Если на сервере пусто или первая синхронизация с существующими локальными данными:
+      const success = await pushImmediate(getState());
+      if (success) {
+        syncStatusMessage = `✓ Данные сохранены на сервере (${new Date().toLocaleTimeString('ru-RU')})`;
+        showToast('Сохранено на сервере', { type: 'success' });
       } else {
-        // Локальное свежее или совпадает
-        const success = await pushImmediate(local);
-        if (success) {
-          localStorage.setItem('syncLastSync', new Date().toISOString());
-          syncStatusMessage = `✓ Синхронизация успешна (сервер обновлён в ${new Date().toLocaleTimeString('ru-RU')})`;
-          showToast('Синхронизировано', { type: 'success' });
-        } else {
-          syncStatusMessage = '❌ Ошибка отправки на сервер';
-          showToast('Синхронизация не удалась', { type: 'error' });
-        }
+        syncStatusMessage = '❌ Ошибка синхронизации с сервером';
+        showToast('Синхронизация не удалась', { type: 'error' });
       }
     }
   } catch (err) {
@@ -437,16 +409,43 @@ function attachEventListeners(container, state) {
   });
 
   // 3. СИНХРОНИЗАЦИЯ
-  container.querySelector('#form-sync-config')?.addEventListener('submit', (e) => {
+  container.querySelector('#form-sync-config')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const url = (container.querySelector('#sync-url')?.value || '').trim();
     const secret = (container.querySelector('#sync-secret')?.value || '').trim();
 
     localStorage.setItem('syncUrl', url);
     localStorage.setItem('syncSecret', secret);
-    syncStatusMessage = '✓ Настройки синхронизации сохранены';
-    showToast('Сохранено', { type: 'success' });
+
+    if (!isConfigured()) {
+      syncStatusMessage = '❌ Укажите URL воркера и секретный ключ';
+      showToast('Укажите URL и секрет', { type: 'error' });
+      render(container, getState());
+      return;
+    }
+
+    isSyncing = true;
+    syncStatusMessage = 'Подключение и загрузка данных с сервера...';
     render(container, getState());
+
+    setInitialLoadComplete(false);
+    try {
+      const merged = await pullAndMerge();
+      if (merged) {
+        syncStatusMessage = `✓ Данные успешно загружены с сервера (${new Date().toLocaleTimeString('ru-RU')})`;
+        showToast('Данные синхронизированы', { type: 'success' });
+      } else {
+        syncStatusMessage = '⚠️ Сервер ответил, но данных нет или неверный ключ';
+        showToast('Данные на сервере не найдены', { type: 'error' });
+      }
+    } catch (err) {
+      syncStatusMessage = `❌ Ошибка: ${err?.message || err}`;
+      showToast('Синхронизация не удалась', { type: 'error' });
+    } finally {
+      setInitialLoadComplete(true);
+      isSyncing = false;
+      render(container, getState());
+    }
   });
 
   container.querySelector('#btn-sync-now')?.addEventListener('click', () => {

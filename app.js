@@ -1,5 +1,5 @@
 import { getState, setState, onStateChange } from './storage.js';
-import { isConfigured, pull, push } from './sync.js';
+import { isConfigured, pullAndMerge, push, setInitialLoadComplete } from './sync.js';
 import { showToast } from './toast.js';
 import * as todayScreen from './ui/today.js';
 import * as weekScreen from './ui/week.js';
@@ -37,7 +37,7 @@ function updateNavActive(currentHash) {
   });
 }
 
-function renderCurrentRoute() {
+export function renderCurrentRoute() {
   const hash = window.location.hash || DEFAULT_ROUTE;
   const routeKey = getRouteKey(hash);
   const screen = routes[routeKey];
@@ -60,6 +60,11 @@ function renderCurrentRoute() {
 
     screen.render(container, getState());
   }
+}
+
+// Глобальный доступ для вызова перерисовки из других модулей (например, sync.js)
+if (typeof window !== 'undefined') {
+  window.renderCurrentRoute = renderCurrentRoute;
 }
 
 // Слушатель роутинга
@@ -88,39 +93,23 @@ onStateChange((state, options) => {
   }
 });
 
-// Синхронизация при старте приложения (Last-write-wins по updatedAt)
+// Синхронизация при старте приложения: сначала pullAndMerge(), затем разблокировка push
 async function syncOnStart() {
-  if (!isConfigured()) return;
+  if (!isConfigured()) {
+    setInitialLoadComplete(true);
+    return;
+  }
+
+  setInitialLoadComplete(false);
   try {
-    const remote = await pull();
-    if (remote === null) {
-      // Ошибка синка или невалидный JSON с сервера
-      showToast('Синхронизация не удалась', { type: 'error' });
-      return;
-    }
-
-    if (typeof remote !== 'object' || Object.keys(remote).length === 0) {
-      // На сервере пусто — пушим текущий локальный state
-      const local = getState();
-      push(local);
-      return;
-    }
-
-    const local = getState();
-    const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
-    const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
-
-    if (remoteTime > localTime) {
-      // Состояние сервера свежее — применяем его
-      setState(() => remote, { preserveUpdatedAt: true, fromRemote: true });
+    const success = await pullAndMerge();
+    if (success) {
       showToast('Синхронизировано', { type: 'success' });
-    } else if (localTime > remoteTime) {
-      // Локальное состояние свежее — отправляем на сервер
-      push(local);
     }
   } catch (err) {
     console.warn('Initial sync error:', err);
-    showToast('Синхронизация не удалась', { type: 'error' });
+  } finally {
+    setInitialLoadComplete(true);
   }
 }
 
