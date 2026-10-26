@@ -557,7 +557,8 @@ function renderTodayTaskModalHtml(fields) {
                 class="form-input form-duration-input" 
                 placeholder="например, 30" 
                 min="0" 
-                step="5" 
+                max="999"
+                step="1" 
                 value="${fields.duration || ''}" 
               />
             </div>
@@ -624,6 +625,7 @@ function attachEventListeners(container, state, meta) {
     const fp = window.flatpickr(dayPickerInput, {
       locale: window.flatpickr.l10ns?.ru || 'ru',
       dateFormat: 'Y-m-d',
+      monthSelectorType: 'dropdown',
       defaultDate: selectedDateISO,
       positionElement: triggerDayBtn || dayPickerInput,
       disableMobile: true,
@@ -746,7 +748,8 @@ function attachEventListeners(container, state, meta) {
 
     const targetDate = dateInput ? dateInput.value : todayISO;
     const time = timeInput.value || '';
-    const duration = durationInput.value ? parseInt(durationInput.value, 10) : 0;
+    const parsedDuration = parseInt(durationInput.value, 10);
+    const duration = Number.isFinite(parsedDuration) && parsedDuration >= 0 ? parsedDuration : 0;
     const category = categorySelect.value || 'personal';
     const note = noteInput.value.trim();
 

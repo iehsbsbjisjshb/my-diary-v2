@@ -221,30 +221,35 @@ function renderTaskCardHtml(task) {
          data-task-id="${task.id}" 
          data-task-date="${task.date}"
          draggable="true">
-      <div class="task-card-main">
-        <label class="task-checkbox-label" title="Отметить выполненной">
-          <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.done ? 'checked' : ''} />
-        </label>
-        
-        <div class="task-content-clickable" data-task-id="${task.id}">
-          <div class="task-title">
+      <div class="task-card-top">
+        <div class="task-card-title-wrap task-content-clickable" data-task-id="${task.id}">
+          <label class="task-checkbox-label" title="Отметить выполненной" onclick="event.stopPropagation()">
+            <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.done ? 'checked' : ''} />
+          </label>
+          <span class="task-title ${task.done ? 'task-title-done' : ''}">
             ${isRepetition ? '<span class="repetition-icon" title="Интервальное повторение"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-inline-icon"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span> ' : ''}${escapeHtml(task.title)}
-          </div>
-          
-          <div class="task-meta-line">
-            ${timeLabel ? `<span class="task-time-badge">${timeLabel}</span>` : ''}
-            ${
-              isRepetition
-                ? '<span class="task-chip chip-chinese-repeat">Повторение</span>'
-                : `<span class="task-chip ${cat.className}">${cat.label}</span>`
-            }
-          </div>
-
-          ${task.note ? `<div class="task-note">${escapeHtml(task.note)}</div>` : ''}
+          </span>
         </div>
-
-        <button class="btn-task-action" data-delete-task-id="${task.id}" title="Удалить задачу" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="btn-task-action" data-delete-task-id="${task.id}" title="Удалить задачу" aria-label="Удалить" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
+
+      ${timeLabel ? `
+      <div class="task-time task-content-clickable" data-task-id="${task.id}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="task-time-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>${timeLabel}</span>
+      </div>` : ''}
+
+      <div class="task-chip-wrap task-content-clickable" data-task-id="${task.id}">
+        ${
+          isRepetition
+            ? '<span class="task-chip chip-chinese-repeat">Повторение</span>'
+            : `<span class="task-chip ${cat.className}">${cat.label}</span>`
+        }
+      </div>
+
+      ${task.note ? `<div class="task-note task-content-clickable" data-task-id="${task.id}">${escapeHtml(task.note)}</div>` : ''}
     </div>
   `;
 }
@@ -305,7 +310,8 @@ function renderTaskModalHtml(fields) {
                 class="form-input form-duration-input" 
                 placeholder="например, 30" 
                 min="0" 
-                step="5" 
+                max="999"
+                step="1" 
                 value="${fields.duration || ''}" 
               />
             </div>
@@ -419,6 +425,7 @@ function attachEventListeners(container, state, meta) {
   // Клик по задаче для редактирования
   container.querySelectorAll('.task-content-clickable').forEach((el) => {
     el.addEventListener('click', (e) => {
+      if (e.target.closest('.task-checkbox-label') || e.target.closest('.task-checkbox')) return;
       e.stopPropagation();
       const taskId = el.getAttribute('data-task-id');
       const task = (state.tasks || []).find((t) => t.id === taskId);
@@ -502,7 +509,8 @@ function attachEventListeners(container, state, meta) {
 
     const targetDate = dateInput ? dateInput.value : todayISO;
     const time = timeInput.value || '';
-    const duration = durationInput.value ? parseInt(durationInput.value, 10) : 0;
+    const parsedDuration = parseInt(durationInput.value, 10);
+    const duration = Number.isFinite(parsedDuration) && parsedDuration >= 0 ? parsedDuration : 0;
     const category = categorySelect.value || 'personal';
     const note = noteInput.value.trim();
 

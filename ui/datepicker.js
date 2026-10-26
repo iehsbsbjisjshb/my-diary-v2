@@ -18,6 +18,7 @@ export function setupDatePicker(inputOrSelector, options = {}) {
     const fp = window.flatpickr(input, {
       locale: window.flatpickr.l10ns?.ru || 'ru',
       dateFormat: 'Y-m-d',
+      monthSelectorType: 'dropdown',
       disableMobile: true,
       allowInput: true,
       ...options,
