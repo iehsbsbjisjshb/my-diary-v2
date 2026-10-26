@@ -460,6 +460,47 @@ body {
   margin-top: -2px;
 }
 
+/* Универсальная поддержка круглой отметки для всех чекбоксов */
+.task-checkbox-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.task-checkbox-label input[type="checkbox"]:checked + .checkbox-circle,
+.task-checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.task-checkbox-label input[type="checkbox"]:checked + .checkbox-circle::after,
+.task-checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #525266;
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
 .task-content-clickable {
   flex: 1;
   min-width: 0;
@@ -868,10 +909,10 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   border-radius: 4px;
   border: 1px solid var(--border-color);
   background: var(--surface-hover);
@@ -1456,11 +1497,84 @@ body {
   color: #ef4444;
 }
 
-.add-lesson-form, .add-bell-form {
+.add-lesson-form {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-top: 0.25rem;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.lesson-inputs-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.form-lesson-time {
+  flex: 3;
+  min-width: 0;
+}
+
+.form-lesson-room {
+  flex: 1;
+  min-width: 60px;
+}
+
+.add-bell-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.bell-inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bell-num-input {
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.bell-time-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.bell-time-sep {
+  color: var(--text-muted);
+  font-weight: bold;
+}
+
+.btn-add-lesson-submit,
+.btn-add-bell-submit {
+  align-self: flex-start;
+  min-height: 40px;
+}
+
+.goal-form-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.goal-title-col {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goal-date-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .override-box-actions {
@@ -1599,9 +1713,10 @@ body {
 }
 
 .base-day-selector {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  width: 100%;
 }
 
 .btn-base-day {
@@ -2259,7 +2374,7 @@ body {
 }
 
 .about-card {
-  background-color: #111118;
+  background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -2428,6 +2543,41 @@ body {
   .hw-item-actions .btn {
     min-height: 44px;
   }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .goal-form-row {
+    flex-direction: column;
+  }
+
+  .btn-add-lesson-submit,
+  .btn-add-bell-submit {
+    width: 100%;
+  }
+
+  .base-day-selector {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .settings-input {
+    max-width: 100%;
+  }
+
+  .hw-reschedule-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reschedule-date-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .hw-reschedule-box .btn {
+    width: 100%;
+  }
 }
 
 /* Десктопная навигация */
@@ -2450,36 +2600,55 @@ body {
 }
 
 /* Тач-таргеты ≥ 44px и доступность */
-button,
 .btn,
 .nav-link,
 .form-input,
-.task-checkbox-label,
-.modal-close,
-.btn-task-action,
-.btn-delete-hw,
-.btn-delete-note,
-.btn-delete-goal {
+.school-tab-btn,
+.btn-overdue {
   min-height: var(--touch-size);
   box-sizing: border-box;
 }
 
 .task-checkbox-label {
-  min-width: var(--touch-size);
-  min-height: var(--touch-size);
+  min-width: 32px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.btn-task-action,
+.btn-task-action {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
 .btn-delete-hw,
 .btn-delete-note,
 .btn-delete-goal,
+.btn-delete-lesson,
+.btn-delete-bell {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
 .modal-close {
-  min-width: var(--touch-size);
-  min-height: var(--touch-size);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

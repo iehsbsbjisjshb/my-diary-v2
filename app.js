@@ -60,7 +60,22 @@ window.addEventListener('hashchange', renderCurrentRoute);
 
 // Слушатель изменений локального состояния: перерисовка + debounced push
 onStateChange((state, options) => {
-  renderCurrentRoute();
+  const isUserTyping = document.activeElement && 
+    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') &&
+    document.activeElement.type !== 'checkbox' &&
+    document.activeElement.type !== 'radio';
+
+  if (options?.fromRemote && isUserTyping) {
+    const activeEl = document.activeElement;
+    const onBlur = () => {
+      activeEl.removeEventListener('blur', onBlur);
+      renderCurrentRoute();
+    };
+    activeEl.addEventListener('blur', onBlur);
+  } else {
+    renderCurrentRoute();
+  }
+
   if (!options?.fromRemote && isConfigured()) {
     push(state);
   }

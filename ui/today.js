@@ -7,6 +7,17 @@ let isCompletedTasksOpen = false;
 let isReviewUserToggled = false;
 let isReviewOpen = false;
 
+const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+function formatShortDate(isoStr) {
+  if (!isoStr) return '';
+  const parts = isoStr.split('-').map(Number);
+  if (parts.length === 3) {
+    return `${parts[2]} ${MONTHS_RU[parts[1] - 1] || ''}`;
+  }
+  return isoStr;
+}
+
 const CATEGORIES = {
   chinese: { label: 'Китайский', className: 'chip-chinese' },
   homework: { label: 'Домашка', className: 'chip-homework' },
@@ -222,7 +233,7 @@ export function render(container, state) {
                   (t) => `
                 <div class="overdue-item" data-id="${t.id}" data-type="task">
                   <div class="overdue-item-info">
-                    <span class="overdue-date">${escapeHtml(t.date)}</span>
+                    <span class="overdue-date">${escapeHtml(formatShortDate(t.date))}</span>
                     <span class="overdue-title-text">${escapeHtml(t.title)}</span>
                     <span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>
                   </div>
@@ -241,7 +252,7 @@ export function render(container, state) {
                   (h) => `
                 <div class="overdue-item" data-id="${h.id}" data-type="homework">
                   <div class="overdue-item-info">
-                    <span class="overdue-date">${escapeHtml(h.dueDate)}</span>
+                    <span class="overdue-date">${escapeHtml(formatShortDate(h.dueDate))}</span>
                     <span class="overdue-title-text">${escapeHtml(h.subject ? `${h.subject}: ` : '')}${escapeHtml(h.title)}</span>
                     <span class="task-chip chip-homework">Домашка</span>
                   </div>
@@ -401,7 +412,7 @@ function renderTimelineCard(item) {
       <div class="timeline-body">
         <label class="task-checkbox-label">
           <input type="checkbox" class="today-item-checkbox" data-id="${item.id}" data-type="${item.itemType}" ${item.done ? 'checked' : ''} />
-          <span class="checkbox-custom"></span>
+          <span class="checkbox-circle"></span>
         </label>
         <span class="timeline-title ${item.done ? 'title-done' : ''}">${escapeHtml(item.title)}</span>
         <span class="task-chip ${isHomework ? 'chip-homework' : cat.className}">${isHomework ? 'Домашка' : cat.label}</span>

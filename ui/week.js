@@ -88,6 +88,9 @@ function parseLocalDate(str) {
 export function render(container, state) {
   if (window.location.hash.includes('next=1')) {
     currentMondayDate = addDays(getMonday(new Date()), 7);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '#/week');
+    }
   }
 
   const todayISO = formatDateISO(new Date());
@@ -214,8 +217,8 @@ export function render(container, state) {
 function renderTaskCardHtml(task) {
   const cat = CATEGORIES[task.category] || CATEGORIES.personal;
   const timeLabel = task.time
-    ? `${escapeHtml(task.time)}${task.duration ? ` (${task.duration} мин)` : ''}`
-    : (task.duration ? `${task.duration} мин` : '');
+    ? `${escapeHtml(task.time)}${task.duration && task.duration > 0 ? ` (${task.duration} мин)` : ''}`
+    : (task.duration && task.duration > 0 ? `${task.duration} мин` : '');
 
   return `
     <div class="task-card ${task.done ? 'task-done' : ''}" 
@@ -275,6 +278,7 @@ function renderTaskFormHtml(fields) {
 
       <input 
         type="number" 
+        inputmode="numeric" 
         class="form-input form-duration-input" 
         placeholder="Длительность (мин)" 
         min="0" 
@@ -401,6 +405,7 @@ function attachEventListeners(container, state) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const taskId = btn.getAttribute('data-delete-task-id');
+      if (!confirm('Удалить эту задачу?')) return;
       setState((prev) => ({
         ...prev,
         tasks: (prev.tasks || []).filter((t) => t.id !== taskId)

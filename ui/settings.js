@@ -246,12 +246,12 @@ function renderGoalForm(goal, isNew) {
   const isTitleEmpty = !goal.title || !goal.title.trim();
   return `
     <form class="goal-inline-form" id="form-goal" data-is-new="${isNew ? '1' : '0'}" data-goal-id="${goal.id || ''}">
-      <div class="form-row">
-        <div class="form-col" style="flex: 2;">
+      <div class="form-row goal-form-row">
+        <div class="form-col goal-title-col">
           <label class="form-label">Название цели *</label>
           <input type="text" class="form-input" id="goal-title-input" placeholder="Например: Сдать HSK 4+" value="${escapeHtml(goal.title)}" required autofocus />
         </div>
-        <div class="form-col" style="flex: 1;">
+        <div class="form-col goal-date-col">
           <label class="form-label">Дедлайн (опционально)</label>
           <input type="date" class="form-input" id="goal-deadline-input" value="${escapeHtml(goal.deadline || '')}" />
         </div>
@@ -481,10 +481,10 @@ function attachEventListeners(container, state) {
 
         if (confirm('Заменить текущие данные данными из выбранного файла?')) {
           setState(() => imported);
-          alert('Данные успешно импортированы!');
+          showToast('Данные успешно импортированы', { type: 'success' });
         }
       } catch (err) {
-        alert(`Ошибка импорта файла: ${err.message}`);
+        showToast(`Ошибка импорта: ${err.message}`, { type: 'error' });
       }
     };
     reader.readAsText(file);
@@ -546,6 +546,6 @@ function attachEventListeners(container, state) {
     resetInputValue = '';
 
     resetState();
-    alert('Все данные успешно сброшены к начальным настройкам!');
+    showToast('Все данные успешно сброшены', { type: 'info' });
   });
 }

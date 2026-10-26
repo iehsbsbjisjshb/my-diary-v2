@@ -203,10 +203,12 @@ function renderScheduleTab(schedule, meta) {
 
             <!-- Форма добавления урока в оверрайд -->
             <form class="add-lesson-form" id="form-add-override-lesson">
-              <input type="text" class="form-input" id="ov-lesson-time" placeholder="Время (08:00-08:45)" list="bells-list" />
-              <input type="text" class="form-input" id="ov-lesson-subject" placeholder="Предмет *" required />
-              <input type="text" class="form-input" id="ov-lesson-room" placeholder="Каб." style="max-width: 80px;" />
-              <button type="submit" class="btn btn-accent btn-sm">+ Добавить урок</button>
+              <input type="text" class="form-input form-lesson-subject" id="ov-lesson-subject" placeholder="Предмет *" required />
+              <div class="lesson-inputs-row">
+                <input type="text" class="form-input form-lesson-time" id="ov-lesson-time" placeholder="Время (08:00-08:45)" list="bells-list" />
+                <input type="text" class="form-input form-lesson-room" id="ov-lesson-room" placeholder="Каб." />
+              </div>
+              <button type="submit" class="btn btn-accent btn-sm btn-add-lesson-submit">+ Добавить урок</button>
             </form>
 
             <div class="override-box-actions">
@@ -304,10 +306,12 @@ function renderScheduleTab(schedule, meta) {
 
               <!-- Форма добавления базового урока -->
               <form class="add-lesson-form" id="form-add-base-lesson">
-                <input type="text" class="form-input" id="base-lesson-time" placeholder="Время (08:00-08:45)" list="bells-list" />
-                <input type="text" class="form-input" id="base-lesson-subject" placeholder="Предмет *" required />
-                <input type="text" class="form-input" id="base-lesson-room" placeholder="Каб." style="max-width: 80px;" />
-                <button type="submit" class="btn btn-accent btn-sm">+ Урок</button>
+                <input type="text" class="form-input form-lesson-subject" id="base-lesson-subject" placeholder="Предмет *" required />
+                <div class="lesson-inputs-row">
+                  <input type="text" class="form-input form-lesson-time" id="base-lesson-time" placeholder="Время (08:00-08:45)" list="bells-list" />
+                  <input type="text" class="form-input form-lesson-room" id="base-lesson-room" placeholder="Каб." />
+                </div>
+                <button type="submit" class="btn btn-accent btn-sm btn-add-lesson-submit">+ Урок</button>
               </form>
             </div>
           </div>
@@ -337,11 +341,13 @@ function renderScheduleTab(schedule, meta) {
 
             <!-- Форма добавления звонка -->
             <form class="add-bell-form" id="form-add-bell">
-              <input type="number" class="form-input" id="bell-num" placeholder="№" min="1" max="15" value="${(schedule.bells || []).length + 1}" style="max-width: 60px;" required />
-              <input type="time" class="form-input" id="bell-start" required />
-              <span style="color: var(--text-muted); align-self: center;">–</span>
-              <input type="time" class="form-input" id="bell-end" required />
-              <button type="submit" class="btn btn-accent btn-sm">+ Добавить</button>
+              <div class="bell-inputs-row">
+                <input type="number" class="form-input bell-num-input" id="bell-num" placeholder="№" min="1" max="15" value="${(schedule.bells || []).length + 1}" required />
+                <input type="time" class="form-input bell-time-input" id="bell-start" required />
+                <span class="bell-time-sep">–</span>
+                <input type="time" class="form-input bell-time-input" id="bell-end" required />
+              </div>
+              <button type="submit" class="btn btn-accent btn-sm btn-add-bell-submit">+ Добавить звонок</button>
             </form>
           </div>
         </details>
@@ -500,7 +506,7 @@ function renderHomeworkItem(h, isOverdue) {
       <div class="hw-item-main">
         <label class="task-checkbox-label">
           <input type="checkbox" class="hw-checkbox" data-hw-id="${h.id}" ${h.done ? 'checked' : ''} />
-          <span class="checkbox-custom"></span>
+          <span class="checkbox-circle"></span>
         </label>
         <div class="hw-item-body">
           <div class="hw-item-meta">
