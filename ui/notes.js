@@ -1,8 +1,8 @@
 import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
 
-let isAddingNote = false;
-let editingNoteId = null;
+let activeNoteModal = null; // null | { isNew: boolean, id?: string, title: string, text: string }
+let notesSearchQuery = '';
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
@@ -30,51 +30,60 @@ function formatNoteDate(isoStr) {
 export function render(container, state) {
   const notes = [...(state.notes || [])];
 
-  // Сортировка: свежие сверху
   notes.sort((a, b) => {
     const da = a.created ? new Date(a.created).getTime() : 0;
     const db = b.created ? new Date(b.created).getTime() : 0;
     return db - da;
   });
 
+  const query = notesSearchQuery.trim().toLowerCase();
+  const filteredNotes = query
+    ? notes.filter(
+        (n) =>
+          (n.title || '').toLowerCase().includes(query) ||
+          (n.text || '').toLowerCase().includes(query)
+      )
+    : notes;
+
   container.innerHTML = `
     <div class="notes-screen">
       <div class="notes-header">
         <h1>Заметки (${notes.length})</h1>
-        ${
-          !isAddingNote
-            ? `<button class="btn btn-accent btn-sm" id="btn-open-add-note">+ Новая заметка</button>`
-            : ''
-        }
       </div>
 
-      <!-- Форма создания новой заметки -->
-      ${
-        isAddingNote
-          ? renderNoteForm({ isNew: true, title: '', text: '' })
-          : ''
-      }
+      <!-- Тулбар поиска и добавления -->
+      <div class="notes-toolbar">
+        <div class="notes-search-box">
+          <span class="notes-search-icon">🔍</span>
+          <input 
+            type="search" 
+            class="form-input notes-search-input" 
+            id="notes-search-input" 
+            placeholder="Поиск по заметкам..." 
+            value="${escapeHtml(notesSearchQuery)}" 
+          />
+          ${
+            notesSearchQuery
+              ? '<button class="notes-search-clear" id="btn-clear-notes-search" type="button" title="Очистить">✕</button>'
+              : ''
+          }
+        </div>
+        <button class="btn btn-accent btn-sm" id="btn-open-add-note">+ Новая заметка</button>
+      </div>
 
       <!-- Список заметок -->
       <div class="notes-list">
         ${
-          notes.length === 0 && !isAddingNote
-            ? `<div class="notes-empty">Заметок пока нет. Нажмите «+ Новая заметка», чтобы создать первую.</div>`
-            : notes
-                .map((note) => {
-                  if (editingNoteId === note.id) {
-                    return renderNoteForm({
-                      isNew: false,
-                      id: note.id,
-                      title: note.title,
-                      text: note.text
-                    });
-                  }
-                  return renderNoteCard(note);
-                })
-                .join('')
+          filteredNotes.length === 0
+            ? query
+              ? `<div class="notes-empty">Ничего не найдено по запросу «${escapeHtml(notesSearchQuery)}»</div>`
+              : `<div class="notes-empty">Заметок пока нет. Нажмите «+ Новая заметка», чтобы создать первую.</div>`
+            : filteredNotes.map((note) => renderNoteCard(note)).join('')
         }
       </div>
+
+      <!-- Модальное окно создания / редактирования заметки -->
+      ${activeNoteModal ? renderNoteModalHtml(activeNoteModal) : ''}
     </div>
   `;
 
@@ -84,7 +93,7 @@ export function render(container, state) {
 function renderNoteCard(note) {
   return `
     <div class="note-card" data-note-id="${note.id}">
-      <div class="note-card-main note-content-clickable" data-note-id="${note.id}">
+      <div class="note-card-main note-content-clickable" data-note-id="${note.id}" title="Нажмите для редактирования">
         ${note.title ? `<div class="note-title">${escapeHtml(note.title)}</div>` : ''}
         <div class="note-text">${escapeHtml(note.text)}</div>
         <div class="note-date">${formatNoteDate(note.created)}</div>
@@ -96,53 +105,91 @@ function renderNoteCard(note) {
   `;
 }
 
-function renderNoteForm(fields) {
+function renderNoteModalHtml(fields) {
   const isTextEmpty = !fields.text || !fields.text.trim();
   return `
-    <form class="note-inline-form" id="form-note" data-mode="${fields.isNew ? 'new' : 'edit'}" data-note-id="${fields.id || ''}">
-      <input 
-        type="text" 
-        class="form-input note-title-input" 
-        placeholder="Заголовок (опционально)" 
-        value="${escapeHtml(fields.title)}" 
-      />
-      <textarea 
-        class="form-input note-textarea" 
-        placeholder="Текст заметки *" 
-        rows="4" 
-        required 
-        autofocus
-      >${escapeHtml(fields.text)}</textarea>
+    <div class="modal-overlay" id="note-modal-overlay">
+      <div class="modal-card note-modal-card">
+        <div class="modal-header">
+          <h3>${fields.isNew ? 'Новая заметка' : 'Редактирование заметки'}</h3>
+          <button class="modal-close" id="btn-close-note-modal" type="button">✕</button>
+        </div>
 
-      <div class="form-actions">
-        <button type="submit" class="btn btn-accent btn-sm btn-save-note" ${isTextEmpty ? 'disabled' : ''}>Сохранить</button>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-note">Отмена</button>
+        <form class="note-modal-form" id="form-note-modal" data-mode="${fields.isNew ? 'new' : 'edit'}" data-note-id="${fields.id || ''}">
+          <div class="form-group">
+            <label class="form-label" for="note-title-input">Заголовок (опционально)</label>
+            <input 
+              type="text" 
+              id="note-title-input"
+              class="form-input note-title-input" 
+              placeholder="О чем заметка?" 
+              value="${escapeHtml(fields.title)}" 
+              autofocus 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="note-textarea-input">Текст заметки *</label>
+            <textarea 
+              id="note-textarea-input"
+              class="form-input note-textarea" 
+              placeholder="Текст или важные мысли..." 
+              rows="6" 
+              required
+            >${escapeHtml(fields.text)}</textarea>
+          </div>
+
+          <div class="modal-actions task-modal-actions">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-note-modal">Отмена</button>
+            <button type="submit" class="btn btn-accent btn-save-note" ${isTextEmpty ? 'disabled' : ''}>
+              ${fields.isNew ? 'Создать' : 'Сохранить'}
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   `;
 }
 
 function attachEventListeners(container, state) {
-  // Валидация обязательного поля текста заметки
-  const noteTextarea = container.querySelector('.note-textarea');
-  const btnSaveNote = container.querySelector('.btn-save-note');
-  if (noteTextarea && btnSaveNote) {
-    noteTextarea.addEventListener('input', () => {
-      btnSaveNote.disabled = !noteTextarea.value.trim();
+  // Escape key handler
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape' && activeNoteModal) {
+      activeNoteModal = null;
+      render(container, getState());
+    }
+  };
+  if (window._notesKeyHandler) window.removeEventListener('keydown', window._notesKeyHandler);
+  window._notesKeyHandler = onKeyDown;
+  window.addEventListener('keydown', onKeyDown);
+
+  // Поиск по заметкам
+  const searchInput = container.querySelector('#notes-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      notesSearchQuery = e.target.value;
+      render(container, getState());
+      const nextInput = container.querySelector('#notes-search-input');
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+      }
     });
   }
 
-  // Открытие формы добавления заметки
-  container.querySelector('#btn-open-add-note')?.addEventListener('click', () => {
-    isAddingNote = true;
-    editingNoteId = null;
+  // Очистка поиска
+  container.querySelector('#btn-clear-notes-search')?.addEventListener('click', () => {
+    notesSearchQuery = '';
     render(container, getState());
   });
 
-  // Отмена формы
-  container.querySelector('#btn-cancel-note')?.addEventListener('click', () => {
-    isAddingNote = false;
-    editingNoteId = null;
+  // Открытие модалки создания заметки
+  container.querySelector('#btn-open-add-note')?.addEventListener('click', () => {
+    activeNoteModal = {
+      isNew: true,
+      title: '',
+      text: ''
+    };
     render(container, getState());
   });
 
@@ -150,28 +197,52 @@ function attachEventListeners(container, state) {
   container.querySelectorAll('.note-content-clickable').forEach((el) => {
     el.addEventListener('click', () => {
       const id = el.getAttribute('data-note-id');
-      editingNoteId = id;
-      isAddingNote = false;
-      render(container, getState());
+      const note = (state.notes || []).find((n) => n.id === id);
+      if (note) {
+        activeNoteModal = {
+          isNew: false,
+          id: note.id,
+          title: note.title,
+          text: note.text
+        };
+        render(container, getState());
+      }
     });
   });
 
-  // Кнопка удаления заметки (✕) с confirm
-  container.querySelectorAll('.btn-delete-note').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute('data-delete-note-id');
-      if (!confirm('Удалить эту заметку?')) return;
+  // Закрытие модалки заметки
+  const closeNoteModal = () => {
+    activeNoteModal = null;
+    render(container, getState());
+  };
 
-      setState((prev) => ({
-        ...prev,
-        notes: (prev.notes || []).filter((n) => n.id !== id)
-      }));
+  container.querySelector('#btn-close-note-modal')?.addEventListener('click', closeNoteModal);
+  container.querySelector('#btn-cancel-note-modal')?.addEventListener('click', closeNoteModal);
+
+  let modalMouseDownTarget = null;
+  container.querySelectorAll('#note-modal-overlay').forEach((overlay) => {
+    overlay.addEventListener('mousedown', (e) => {
+      modalMouseDownTarget = e.target;
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay && modalMouseDownTarget === overlay) {
+        closeNoteModal();
+      }
+      modalMouseDownTarget = null;
     });
   });
 
-  // Сохранение заметки (новая или редактируемая)
-  container.querySelector('#form-note')?.addEventListener('submit', (e) => {
+  // Валидация текста в модалке заметки
+  const noteTextarea = container.querySelector('#note-textarea-input');
+  const btnSaveNote = container.querySelector('.btn-save-note');
+  if (noteTextarea && btnSaveNote) {
+    noteTextarea.addEventListener('input', () => {
+      btnSaveNote.disabled = !noteTextarea.value.trim();
+    });
+  }
+
+  // Сабмит формы заметки
+  container.querySelector('#form-note-modal')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const form = e.target;
     const mode = form.getAttribute('data-mode');
@@ -184,6 +255,8 @@ function attachEventListeners(container, state) {
     const text = textArea.value.trim();
     if (!text) return;
 
+    activeNoteModal = null;
+
     if (mode === 'new') {
       const newNote = {
         id: 'n_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
@@ -192,18 +265,12 @@ function attachEventListeners(container, state) {
         created: new Date().toISOString()
       };
 
-      // Сбрасываем флаг ДО вызова setState
-      isAddingNote = false;
-
       setState((prev) => ({
         ...prev,
         notes: [...(prev.notes || []), newNote]
       }));
-      showToast('Сохранено', { type: 'success' });
+      showToast('Заметка создана', { type: 'success' });
     } else {
-      // Сбрасываем флаг ДО вызова setState
-      editingNoteId = null;
-
       setState((prev) => ({
         ...prev,
         notes: (prev.notes || []).map((n) =>
@@ -218,5 +285,34 @@ function attachEventListeners(container, state) {
       }));
       showToast('Сохранено', { type: 'success' });
     }
+  });
+
+  // Кнопка удаления заметки (✕) с Undo Toast
+  container.querySelectorAll('.btn-delete-note').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-delete-note-id');
+      const noteToDelete = (state.notes || []).find((n) => n.id === id);
+      if (!noteToDelete) return;
+
+      setState((prev) => ({
+        ...prev,
+        notes: (prev.notes || []).filter((n) => n.id !== id)
+      }));
+
+      showToast('Заметка удалена', {
+        duration: 4000,
+        action: {
+          text: 'Отменить',
+          onClick: () => {
+            setState((prev) => ({
+              ...prev,
+              notes: [...(prev.notes || []), noteToDelete]
+            }));
+            showToast('Заметка восстановлена', { type: 'success' });
+          }
+        }
+      });
+    });
   });
 }

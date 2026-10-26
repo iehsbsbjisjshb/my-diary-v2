@@ -3,6 +3,7 @@ import { showToast } from '../toast.js';
 
 let currentMondayDate = getMonday(new Date());
 let activeModalTask = null; // null | { isNew: boolean, id?: string, date: string, title: string, time: string, duration: number|string, category: string, note: string }
+let mobileSelectedDayIso = null; // null | 'all' | 'YYYY-MM-DD'
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const DAYS_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -90,12 +91,17 @@ export function render(container, state) {
 
   // Генерируем 7 дней недели
   const days = [];
+  let isTodayInCurrentWeek = false;
+
   for (let i = 0; i < 7; i++) {
     const dayDate = addDays(currentMondayDate, i);
     const dayISO = formatDateISO(dayDate);
     const dayTasks = (state.tasks || []).filter((t) => t.date === dayISO);
 
-    // Сортировка: задачи с time в начале по возрастанию, без time — в конце
+    if (dayISO === todayISO) {
+      isTodayInCurrentWeek = true;
+    }
+
     dayTasks.sort((a, b) => {
       if (a.time && b.time) return a.time.localeCompare(b.time);
       if (a.time && !b.time) return -1;
@@ -113,6 +119,11 @@ export function render(container, state) {
       isToday: dayISO === todayISO,
       tasks: dayTasks
     });
+  }
+
+  // Если мобильный выбор еще не установлен: по умолчанию ставим сегодня (если в этой неделе) или понедельник
+  if (mobileSelectedDayIso === null) {
+    mobileSelectedDayIso = isTodayInCurrentWeek ? todayISO : days[0].iso;
   }
 
   container.innerHTML = `
@@ -145,12 +156,30 @@ export function render(container, state) {
           : ''
       }
 
+      <!-- Мобильная панель переключения дней -->
+      <div class="week-mobile-days-strip">
+        <button class="week-day-pill ${mobileSelectedDayIso === 'all' ? 'active' : ''}" data-day-pill="all">
+          Все дни
+        </button>
+        ${days
+          .map(
+            (d) => `
+          <button class="week-day-pill ${mobileSelectedDayIso === d.iso ? 'active' : ''} ${d.isToday ? 'pill-today' : ''}" data-day-pill="${d.iso}">
+            <span>${d.dayNameShort} ${d.dayOfMonth}</span>
+            ${d.tasks.length > 0 ? `<span class="week-day-pill-badge">${d.tasks.length}</span>` : ''}
+          </button>
+        `
+          )
+          .join('')}
+      </div>
+
       <!-- Сетка дней -->
       <div class="week-grid">
         ${days
           .map((day) => {
+            const isHiddenOnMobile = mobileSelectedDayIso !== 'all' && mobileSelectedDayIso !== day.iso;
             return `
-            <div class="day-col ${day.isToday ? 'day-today' : ''}" data-day-iso="${day.iso}">
+            <div class="day-col ${day.isToday ? 'day-today' : ''} ${isHiddenOnMobile ? 'day-col-hidden-mobile' : ''}" data-day-iso="${day.iso}">
               <div class="day-header">
                 <div class="day-title">
                   <span>${day.dayNameShort.toUpperCase()} ${day.dayOfMonth} ${day.monthName}</span>
@@ -176,8 +205,7 @@ export function render(container, state) {
     </div>
   `;
 
-  // Навешиваем слушатели событий
-  attachEventListeners(container, state, { todayISO });
+  attachEventListeners(container, state, { todayISO, days });
 }
 
 function renderTaskCardHtml(task) {
@@ -316,12 +344,21 @@ function renderTaskModalHtml(fields) {
 }
 
 function attachEventListeners(container, state, meta) {
-  const { todayISO } = meta;
+  const { todayISO, days } = meta;
+
+  // Мобильная панель переключения дней
+  container.querySelectorAll('.week-day-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      mobileSelectedDayIso = pill.getAttribute('data-day-pill');
+      render(container, getState());
+    });
+  });
 
   // Навигация недели: Назад
   container.querySelector('#week-prev')?.addEventListener('click', () => {
     currentMondayDate = addDays(currentMondayDate, -7);
     activeModalTask = null;
+    mobileSelectedDayIso = 'all';
     render(container, getState());
   });
 
@@ -329,6 +366,7 @@ function attachEventListeners(container, state, meta) {
   container.querySelector('#week-next')?.addEventListener('click', () => {
     currentMondayDate = addDays(currentMondayDate, 7);
     activeModalTask = null;
+    mobileSelectedDayIso = 'all';
     render(container, getState());
   });
 
@@ -340,6 +378,7 @@ function attachEventListeners(container, state, meta) {
     }
     currentMondayDate = getMonday(new Date());
     activeModalTask = null;
+    mobileSelectedDayIso = todayISO;
     render(container, getState());
   });
 
@@ -347,7 +386,7 @@ function attachEventListeners(container, state, meta) {
   container.querySelector('#btn-week-add-task')?.addEventListener('click', () => {
     activeModalTask = {
       isNew: true,
-      date: todayISO,
+      date: mobileSelectedDayIso && mobileSelectedDayIso !== 'all' ? mobileSelectedDayIso : todayISO,
       title: '',
       time: '',
       duration: '',
@@ -436,6 +475,16 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
+  // Закрытие по Escape
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape' && activeModalTask) {
+      closeTaskModal();
+    }
+  };
+  if (window._weekKeyHandler) window.removeEventListener('keydown', window._weekKeyHandler);
+  window._weekKeyHandler = onKeyDown;
+  window.addEventListener('keydown', onKeyDown);
+
   // Валидация заголовка задачи в модалке
   const modalTitleInput = container.querySelector('#task-title-input');
   const modalSaveBtn = container.querySelector('.btn-save-task');
@@ -468,7 +517,6 @@ function attachEventListeners(container, state, meta) {
     const category = categorySelect.value || 'personal';
     const note = noteInput.value.trim();
 
-    // Сбрасываем модалку ДО вызова setState
     activeModalTask = null;
 
     if (mode === 'new') {
@@ -541,16 +589,32 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
-  // Кнопка удаления задачи (✕)
+  // Кнопка удаления задачи (✕) с отменой через Toast (без блокирующего confirm)
   container.querySelectorAll('.btn-task-action').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const taskId = btn.getAttribute('data-delete-task-id');
-      if (!confirm('Удалить эту задачу?')) return;
+      const taskToDelete = (state.tasks || []).find((t) => t.id === taskId);
+      if (!taskToDelete) return;
+
       setState((prev) => ({
         ...prev,
         tasks: (prev.tasks || []).filter((t) => t.id !== taskId)
       }));
+
+      showToast('Задача удалена', {
+        duration: 4000,
+        action: {
+          text: 'Отменить',
+          onClick: () => {
+            setState((prev) => ({
+              ...prev,
+              tasks: [...(prev.tasks || []), taskToDelete]
+            }));
+            showToast('Задача восстановлена', { type: 'success' });
+          }
+        }
+      });
     });
   });
 
@@ -559,7 +623,6 @@ function attachEventListeners(container, state, meta) {
 }
 
 function setupDragAndDrop(container) {
-  // Draggable карточки
   container.querySelectorAll('.task-card').forEach((card) => {
     card.addEventListener('dragstart', (e) => {
       const taskId = card.getAttribute('data-task-id');
@@ -574,7 +637,6 @@ function setupDragAndDrop(container) {
     });
   });
 
-  // Drop зоны (колонки дней)
   container.querySelectorAll('.day-col').forEach((col) => {
     col.addEventListener('dragover', (e) => {
       e.preventDefault();

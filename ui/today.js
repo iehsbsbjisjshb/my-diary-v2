@@ -2,7 +2,8 @@ import { getState, setState } from '../storage.js';
 import { showToast } from '../toast.js';
 
 let isEditingReview = false;
-let activeModal = null; // 'minutes' | 'words' | null
+let activeModal = null; // 'study' | null
+let activeTaskModal = null; // null | { isNew: boolean, id?: string, date: string, title: string, time: string, duration: number|string, category: string, note: string }
 let isCompletedTasksOpen = false;
 let isReviewUserToggled = false;
 let isReviewOpen = false;
@@ -84,7 +85,6 @@ export function render(container, state) {
   const dailyGoal = chinese.dailyGoalMinutes || 60;
   const minutesPercent = Math.min(100, Math.round((todayMinutes / dailyGoal) * 100));
 
-  // Определение актуального streak (стрик активен, если занимался сегодня или вчера)
   let currentStreak = 0;
   if (chinese.lastStudyDate === todayISO || chinese.lastStudyDate === yesterdayISO) {
     currentStreak = chinese.streak || 0;
@@ -103,7 +103,6 @@ export function render(container, state) {
   const todayTasks = (state.tasks || []).filter((t) => t.date === todayISO);
   const todayHomework = (state.homework || []).filter((h) => h.dueDate === todayISO);
 
-  // Объединяем элементы для таймлайна
   const timelineItems = [
     ...todayTasks.map((t) => ({ ...t, itemType: 'task' })),
     ...todayHomework.map((h) => ({
@@ -116,7 +115,6 @@ export function render(container, state) {
     }))
   ];
 
-  // Сортировка: по времени (если есть), без времени — в конце
   timelineItems.sort((a, b) => {
     if (a.time && b.time) return a.time.localeCompare(b.time);
     if (a.time && !b.time) return -1;
@@ -129,7 +127,7 @@ export function render(container, state) {
   const todayDoneCount = completedItems.length;
 
   // 4. Баннер планирования следующей недели (в Сб/Вс)
-  const dayOfWeek = now.getDay(); // 0 - Вс, 6 - Сб
+  const dayOfWeek = now.getDay();
   const isWeekend = dayOfWeek === 6 || dayOfWeek === 0;
   let showNextWeekBanner = false;
   let nextIsoWeek = '';
@@ -148,7 +146,7 @@ export function render(container, state) {
 
   container.innerHTML = `
     <div class="today-screen">
-      <!-- 5. Баннер планирования следующей недели (если сб/вс и не спланирована) -->
+      <!-- Баннер планирования следующей недели (если сб/вс) -->
       ${
         showNextWeekBanner
           ? `
@@ -219,7 +217,7 @@ export function render(container, state) {
         </div>
       </section>
 
-      <!-- 3. Блок «Просрочено» (если есть невыполненные из прошлого) -->
+      <!-- 2. Блок «Просрочено» -->
       ${
         hasOverdue
           ? `
@@ -235,10 +233,11 @@ export function render(container, state) {
                   <div class="overdue-item-info">
                     <span class="overdue-date">${escapeHtml(formatShortDate(t.date))}</span>
                     <span class="overdue-title-text">${escapeHtml(t.title)}</span>
-                    ${(t.category === 'chinese' && (t.title || '').toLowerCase().includes('повторить'))
-      ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
-      : `<span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>`
-  }
+                    ${
+                      t.category === 'chinese' && (t.title || '').toLowerCase().includes('повторить')
+                        ? '<span class="task-chip chip-chinese-repeat">🔄 Повторение</span>'
+                        : `<span class="task-chip ${CATEGORIES[t.category]?.className || 'chip-personal'}">${CATEGORIES[t.category]?.label || 'Личное'}</span>`
+                    }
                   </div>
                   <div class="overdue-actions">
                     <button class="btn-overdue btn-overdue-done" data-action="done" data-id="${t.id}" data-type="task">✓ Готово</button>
@@ -274,16 +273,24 @@ export function render(container, state) {
           : ''
       }
 
-      <!-- 2. Таймлайн дня -->
+      <!-- 3. Таймлайн дня -->
       <section class="today-section timeline-section">
         <div class="timeline-header">
-          <h2>План на сегодня</h2>
-          <span class="timeline-date-label">${now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+          <div class="timeline-header-left">
+            <h2>План на сегодня</h2>
+            <span class="timeline-date-label">${now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+          </div>
+          <button class="btn btn-accent btn-sm" id="btn-today-add-task">+ Новая задача</button>
         </div>
 
         ${
           timelineItems.length === 0
-            ? `<div class="timeline-empty">На сегодня пока нет задач. Добавьте их во вкладке «Неделя».</div>`
+            ? `
+            <div class="timeline-empty">
+              <p>На сегодня пока нет задач.</p>
+              <button class="btn btn-accent btn-sm" id="btn-today-empty-add-task" style="margin-top: 10px;">+ Создать задачу на сегодня</button>
+            </div>
+            `
             : `
             <div class="timeline-list">
               ${activeItems
@@ -341,7 +348,7 @@ export function render(container, state) {
         </details>
       </section>
 
-      <!-- Модальное окно: Отметить занятие китайским (минуты + новые слова + интервальное повторение) -->
+      <!-- Модальное окно: Отметить занятие китайским -->
       ${
         activeModal === 'study'
           ? `
@@ -349,7 +356,7 @@ export function render(container, state) {
             <div class="modal-card">
               <div class="modal-header">
                 <h3>🇨🇳 Отметить занятие китайским</h3>
-                <button class="modal-close" id="btn-close-modal">✕</button>
+                <button class="modal-close" id="btn-close-modal" type="button">✕</button>
               </div>
               <form id="form-add-study-session">
                 <div class="modal-field-group">
@@ -402,6 +409,9 @@ export function render(container, state) {
           `
           : ''
       }
+
+      <!-- Модальное окно: Создание / Редактирование задачи на Сегодня -->
+      ${activeTaskModal ? renderTodayTaskModalHtml(activeTaskModal) : ''}
     </div>
   `;
 
@@ -416,8 +426,8 @@ function renderTimelineCard(item) {
   return `
     <div class="timeline-card ${item.done ? 'timeline-card-done' : ''} ${isRepetition ? 'timeline-card-repetition' : ''}">
       <div class="timeline-time">${escapeHtml(item.time || '—')}</div>
-      <div class="timeline-body">
-        <label class="task-checkbox-label">
+      <div class="timeline-body ${!isHomework ? 'timeline-body-clickable' : ''}" data-task-id="${item.id}">
+        <label class="task-checkbox-label" title="Отметить выполненной">
           <input type="checkbox" class="today-item-checkbox" data-id="${item.id}" data-type="${item.itemType}" ${item.done ? 'checked' : ''} />
           <span class="checkbox-circle"></span>
         </label>
@@ -430,6 +440,105 @@ function renderTimelineCard(item) {
             : `<span class="task-chip ${isHomework ? 'chip-homework' : cat.className}">${isHomework ? 'Домашка' : cat.label}</span>`
         }
       </div>
+      ${
+        !isHomework
+          ? `<button class="btn-task-action btn-timeline-delete" data-delete-task-id="${item.id}" title="Удалить задачу" aria-label="Удалить">✕</button>`
+          : ''
+      }
+    </div>
+  `;
+}
+
+function renderTodayTaskModalHtml(fields) {
+  const isTitleEmpty = !fields.title || !fields.title.trim();
+  return `
+    <div class="modal-overlay task-modal-overlay" id="today-task-modal-overlay">
+      <div class="modal-card task-modal-card">
+        <div class="modal-header">
+          <h3>${fields.isNew ? 'Новая задача на сегодня' : 'Редактирование задачи'}</h3>
+          <button class="modal-close" id="btn-close-today-task-modal" type="button">✕</button>
+        </div>
+
+        <form class="task-modal-form" id="form-today-task-modal" data-form-mode="${fields.isNew ? 'new' : 'edit'}" data-task-id="${fields.id || ''}">
+          <div class="form-group">
+            <label class="form-label" for="today-task-title-input">Название задачи *</label>
+            <input 
+              type="text" 
+              id="today-task-title-input"
+              class="form-input form-title-input" 
+              placeholder="Что нужно сделать?" 
+              value="${escapeHtml(fields.title)}" 
+              required 
+              autofocus 
+            />
+          </div>
+
+          <div class="form-datetime-row">
+            <div class="form-group form-col-half">
+              <label class="form-label" for="today-task-date-input">Дата *</label>
+              <input 
+                type="date" 
+                id="today-task-date-input"
+                class="form-input form-task-date-input" 
+                value="${fields.date}" 
+                required 
+              />
+            </div>
+            <div class="form-group form-col-half">
+              <label class="form-label" for="today-task-time-input">Время (опционально)</label>
+              <input 
+                type="time" 
+                id="today-task-time-input"
+                class="form-input form-time-input" 
+                value="${escapeHtml(fields.time || '')}" 
+              />
+            </div>
+          </div>
+
+          <div class="form-datetime-row">
+            <div class="form-group form-col-half">
+              <label class="form-label" for="today-task-duration-input">Длительность (минут)</label>
+              <input 
+                type="number" 
+                inputmode="numeric" 
+                id="today-task-duration-input"
+                class="form-input form-duration-input" 
+                placeholder="например, 30" 
+                min="0" 
+                step="5" 
+                value="${fields.duration || ''}" 
+              />
+            </div>
+            <div class="form-group form-col-half">
+              <label class="form-label" for="today-task-category-select">Категория</label>
+              <select id="today-task-category-select" class="form-input form-category-select">
+                <option value="chinese" ${fields.category === 'chinese' ? 'selected' : ''}>Китайский</option>
+                <option value="homework" ${fields.category === 'homework' ? 'selected' : ''}>Домашка</option>
+                <option value="school" ${fields.category === 'school' ? 'selected' : ''}>Школа</option>
+                <option value="personal" ${fields.category === 'personal' || !fields.category ? 'selected' : ''}>Личное</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="today-task-note-input">Заметка (опционально)</label>
+            <input 
+              type="text" 
+              id="today-task-note-input"
+              class="form-input form-note-input" 
+              placeholder="Детали или ссылка" 
+              value="${escapeHtml(fields.note || '')}" 
+            />
+          </div>
+
+          <div class="modal-actions task-modal-actions">
+            <button type="button" class="btn btn-secondary btn-cancel-task" id="btn-cancel-today-task-modal">Отмена</button>
+            <button type="submit" class="btn btn-accent btn-save-task" ${isTitleEmpty ? 'disabled' : ''}>
+              ${fields.isNew ? 'Создать' : 'Сохранить'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   `;
 }
@@ -437,13 +546,188 @@ function renderTimelineCard(item) {
 function attachEventListeners(container, state, meta) {
   const { todayISO, yesterdayISO, tomorrowISO, todayDoneCount } = meta;
 
-  // 1. Открытие модалки занятия
+  // Escape key handler
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      if (activeModal || activeTaskModal) {
+        activeModal = null;
+        activeTaskModal = null;
+        render(container, getState());
+      }
+    }
+  };
+  if (window._todayKeyHandler) window.removeEventListener('keydown', window._todayKeyHandler);
+  window._todayKeyHandler = onKeyDown;
+  window.addEventListener('keydown', onKeyDown);
+
+  // Кнопка "+ Новая задача" на сегодня
+  const openNewTaskModal = () => {
+    activeTaskModal = {
+      isNew: true,
+      date: todayISO,
+      title: '',
+      time: '',
+      duration: '',
+      category: 'personal',
+      note: ''
+    };
+    render(container, getState());
+  };
+
+  container.querySelector('#btn-today-add-task')?.addEventListener('click', openNewTaskModal);
+  container.querySelector('#btn-today-empty-add-task')?.addEventListener('click', openNewTaskModal);
+
+  // Клик по задаче в таймлайне для редактирования
+  container.querySelectorAll('.timeline-body-clickable').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.task-checkbox-label')) return;
+      const taskId = el.getAttribute('data-task-id');
+      const task = (state.tasks || []).find((t) => t.id === taskId);
+      if (task) {
+        activeTaskModal = {
+          isNew: false,
+          id: task.id,
+          date: task.date,
+          title: task.title,
+          time: task.time,
+          duration: task.duration,
+          category: task.category,
+          note: task.note
+        };
+        render(container, getState());
+      }
+    });
+  });
+
+  // Закрытие модалки задачи на сегодня
+  const closeTodayTaskModal = () => {
+    activeTaskModal = null;
+    render(container, getState());
+  };
+
+  container.querySelector('#btn-close-today-task-modal')?.addEventListener('click', closeTodayTaskModal);
+  container.querySelector('#btn-cancel-today-task-modal')?.addEventListener('click', closeTodayTaskModal);
+
+  // Закрытие модалки задачи по клику на фон
+  let taskModalDownTarget = null;
+  container.querySelectorAll('#today-task-modal-overlay').forEach((overlay) => {
+    overlay.addEventListener('mousedown', (e) => {
+      taskModalDownTarget = e.target;
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay && taskModalDownTarget === overlay) {
+        closeTodayTaskModal();
+      }
+      taskModalDownTarget = null;
+    });
+  });
+
+  // Валидация заголовка задачи в модалке
+  const todayTitleInput = container.querySelector('#today-task-title-input');
+  const todaySaveBtn = container.querySelector('.btn-save-task');
+  if (todayTitleInput && todaySaveBtn) {
+    todayTitleInput.addEventListener('input', () => {
+      todaySaveBtn.disabled = !todayTitleInput.value.trim();
+    });
+  }
+
+  // Сабмит формы создания/редактирования задачи на сегодня
+  container.querySelector('#form-today-task-modal')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const mode = form.getAttribute('data-form-mode');
+    const taskId = form.getAttribute('data-task-id');
+
+    const titleInput = form.querySelector('.form-title-input');
+    const dateInput = form.querySelector('.form-task-date-input');
+    const timeInput = form.querySelector('.form-time-input');
+    const durationInput = form.querySelector('.form-duration-input');
+    const categorySelect = form.querySelector('.form-category-select');
+    const noteInput = form.querySelector('.form-note-input');
+
+    const title = titleInput.value.trim();
+    if (!title) return;
+
+    const targetDate = dateInput ? dateInput.value : todayISO;
+    const time = timeInput.value || '';
+    const duration = durationInput.value ? parseInt(durationInput.value, 10) : 0;
+    const category = categorySelect.value || 'personal';
+    const note = noteInput.value.trim();
+
+    activeTaskModal = null;
+
+    if (mode === 'new') {
+      const newTask = {
+        id: 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        title,
+        date: targetDate,
+        time,
+        duration,
+        category,
+        done: false,
+        note
+      };
+      setState((prev) => ({
+        ...prev,
+        tasks: [...(prev.tasks || []), newTask]
+      }));
+      showToast('Задача создана', { type: 'success' });
+    } else {
+      setState((prev) => ({
+        ...prev,
+        tasks: (prev.tasks || []).map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                title,
+                date: targetDate,
+                time,
+                duration,
+                category,
+                note
+              }
+            : t
+        )
+      }));
+      showToast('Сохранено', { type: 'success' });
+    }
+  });
+
+  // Удаление задачи из таймлайна с Undo Toast
+  container.querySelectorAll('.btn-timeline-delete').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const taskId = btn.getAttribute('data-delete-task-id');
+      const taskToDelete = (state.tasks || []).find((t) => t.id === taskId);
+      if (!taskToDelete) return;
+
+      setState((prev) => ({
+        ...prev,
+        tasks: (prev.tasks || []).filter((t) => t.id !== taskId)
+      }));
+
+      showToast('Задача удалена', {
+        duration: 4000,
+        action: {
+          text: 'Отменить',
+          onClick: () => {
+            setState((prev) => ({
+              ...prev,
+              tasks: [...(prev.tasks || []), taskToDelete]
+            }));
+            showToast('Задача восстановлена', { type: 'success' });
+          }
+        }
+      });
+    });
+  });
+
+  // 1. Открытие модалки занятия китайским
   container.querySelector('#btn-open-minutes-modal')?.addEventListener('click', () => {
     activeModal = 'study';
     render(container, getState());
   });
 
-  // Открытие модалки по кнопке добавления слов
   container.querySelector('#btn-open-words-modal')?.addEventListener('click', () => {
     activeModal = 'study';
     render(container, getState());
@@ -452,7 +736,7 @@ function attachEventListeners(container, state, meta) {
     }, 50);
   });
 
-  // Закрытие модалки
+  // Закрытие модалки занятия китайским
   const closeModal = () => {
     activeModal = null;
     render(container, getState());
@@ -461,9 +745,8 @@ function attachEventListeners(container, state, meta) {
   container.querySelector('#btn-close-modal')?.addEventListener('click', closeModal);
   container.querySelector('#btn-cancel-study')?.addEventListener('click', closeModal);
 
-  // Закрытие модалки по клику на фон
   let modalMouseDownTarget = null;
-  container.querySelectorAll('.modal-overlay').forEach((overlay) => {
+  container.querySelectorAll('#study-modal-overlay').forEach((overlay) => {
     overlay.addEventListener('mousedown', (e) => {
       modalMouseDownTarget = e.target;
     });
@@ -475,7 +758,7 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
-  // Быстрые чипы минут
+  // Чипы минут
   container.querySelectorAll('.btn-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       const input = container.querySelector('#input-study-minutes');
@@ -487,7 +770,7 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
-  // Быстрые чипы слов
+  // Чипы слов
   container.querySelectorAll('.btn-words-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       const input = container.querySelector('#input-study-words');
@@ -506,7 +789,7 @@ function attachEventListeners(container, state, meta) {
     });
   }
 
-  // Сабмит формы занятия китайским (минуты + новые слова + интервальное повторение)
+  // Сабмит формы занятия китайским
   container.querySelector('#form-add-study-session')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const minutesInput = container.querySelector('#input-study-minutes');
@@ -516,8 +799,6 @@ function attachEventListeners(container, state, meta) {
     if (!minutes || minutes <= 0) return;
 
     const words = wordsInput.value ? parseInt(wordsInput.value, 10) : 0;
-
-    // Сбрасываем модалку ДО вызова setState
     activeModal = null;
 
     setState((prev) => {
@@ -526,7 +807,6 @@ function attachEventListeners(container, state, meta) {
       const currentTodayMinutes = history[todayISO] || 0;
       history[todayISO] = currentTodayMinutes + minutes;
 
-      // Расчет streak:
       let newStreak = chinese.streak || 0;
       if (chinese.lastStudyDate !== todayISO) {
         if (chinese.lastStudyDate === yesterdayISO) {
@@ -536,7 +816,6 @@ function attachEventListeners(container, state, meta) {
         }
       }
 
-      // Генерация задач интервального повторения (+1, +3, +7 дней), если введены слова > 0
       let updatedTasks = [...(prev.tasks || [])];
       if (words > 0) {
         const nowObj = new Date();
@@ -582,7 +861,7 @@ function attachEventListeners(container, state, meta) {
     showToast(words > 0 ? 'Занятие сохранено! Создано 3 задачи на повторение' : 'Занятие сохранено', { type: 'success' });
   });
 
-  // 2. Чекбоксы таймлайна (выполнение задачи или домашки)
+  // Чекбоксы таймлайна
   container.querySelectorAll('.today-item-checkbox').forEach((checkbox) => {
     checkbox.addEventListener('change', () => {
       const id = checkbox.getAttribute('data-id');
@@ -622,7 +901,7 @@ function attachEventListeners(container, state, meta) {
     });
   });
 
-  // 3. Действия с просрочками
+  // Действия с просрочками с отменой через Toast
   container.querySelectorAll('.btn-overdue').forEach((btn) => {
     btn.addEventListener('click', () => {
       const action = btn.getAttribute('data-action');
@@ -630,12 +909,34 @@ function attachEventListeners(container, state, meta) {
       const type = btn.getAttribute('data-type');
 
       if (action === 'delete') {
-        if (!confirm('Удалить эту задачу?')) return;
+        const itemToDelete = type === 'task'
+          ? (state.tasks || []).find((t) => t.id === id)
+          : (state.homework || []).find((h) => h.id === id);
+
+        if (!itemToDelete) return;
+
         setState((prev) => {
           if (type === 'task') {
             return { ...prev, tasks: (prev.tasks || []).filter((t) => t.id !== id) };
           } else {
             return { ...prev, homework: (prev.homework || []).filter((h) => h.id !== id) };
+          }
+        });
+
+        showToast('Просроченная задача удалена', {
+          duration: 4000,
+          action: {
+            text: 'Отменить',
+            onClick: () => {
+              setState((prev) => {
+                if (type === 'task') {
+                  return { ...prev, tasks: [...(prev.tasks || []), itemToDelete] };
+                } else {
+                  return { ...prev, homework: [...(prev.homework || []), itemToDelete] };
+                }
+              });
+              showToast('Восстановлено', { type: 'success' });
+            }
           }
         });
       } else if (action === 'done') {
@@ -666,11 +967,12 @@ function attachEventListeners(container, state, meta) {
             };
           }
         });
+        showToast('Перенесено на завтра', { type: 'info' });
       }
     });
   });
 
-  // Сохранение состояния раскрытия деталей
+  // Детали раскрытия
   container.querySelector('#details-today-completed')?.addEventListener('toggle', (e) => {
     isCompletedTasksOpen = e.target.open;
   });
@@ -680,7 +982,7 @@ function attachEventListeners(container, state, meta) {
     isReviewOpen = e.target.open;
   });
 
-  // 4. Разбор дня: сохранение / редактирование
+  // Разбор дня: сохранение / редактирование
   container.querySelector('#btn-edit-review')?.addEventListener('click', () => {
     isEditingReview = true;
     render(container, getState());
@@ -705,7 +1007,6 @@ function attachEventListeners(container, state, meta) {
     const note = textarea.value.trim();
     if (!note) return;
 
-    // Сбрасываем флаг ДО вызова setState
     isEditingReview = false;
 
     setState((prev) => {
@@ -729,38 +1030,38 @@ function attachEventListeners(container, state, meta) {
         reviews
       };
     });
-    showToast('Сохранено', { type: 'success' });
+
+    showToast('Итог дня сохранён', { type: 'success' });
   });
 
-  // 5. Переход к планированию недели из баннера с фокусом на следующей неделе
   container.querySelector('#btn-goto-week-plan')?.addEventListener('click', () => {
     window.location.hash = '#/week?next=1';
   });
 }
 
-function getPluralWords(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return 'слов';
-  if (mod10 === 1) return 'слово';
-  if (mod10 >= 2 && mod10 <= 4) return 'слова';
-  return 'слов';
-}
-
 function getPluralDays(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return 'дней';
-  if (mod10 === 1) return 'день';
-  if (mod10 >= 2 && mod10 <= 4) return 'дня';
+  const abs = Math.abs(n) % 100;
+  const rem = abs % 10;
+  if (abs > 10 && abs < 20) return 'дней';
+  if (rem > 1 && rem < 5) return 'дня';
+  if (rem === 1) return 'день';
   return 'дней';
 }
 
+function getPluralWords(n) {
+  const abs = Math.abs(n) % 100;
+  const rem = abs % 10;
+  if (abs > 10 && abs < 20) return 'слов';
+  if (rem > 1 && rem < 5) return 'слова';
+  if (rem === 1) return 'слово';
+  return 'слов';
+}
+
 function getPluralTasks(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return 'задач';
-  if (mod10 === 1) return 'задача';
-  if (mod10 >= 2 && mod10 <= 4) return 'задачи';
+  const abs = Math.abs(n) % 100;
+  const rem = abs % 10;
+  if (abs > 10 && abs < 20) return 'задач';
+  if (rem > 1 && rem < 5) return 'задачи';
+  if (rem === 1) return 'задача';
   return 'задач';
 }
