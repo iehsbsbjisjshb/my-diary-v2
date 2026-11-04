@@ -130,7 +130,7 @@ export function updateDynamicDailyGoal(chinese, history = {}) {
   }
 
   let lastGoalDate = chinese?.lastGoalDate;
-  let maxGoalReached = Boolean(chinese?.maxGoalReached || currentGoal >= 120);
+  let maxGoalReached = Boolean(chinese?.maxGoalReached && currentGoal >= 180);
 
   // Если динамическая цель ещё не инициализировалась датой
   if (!lastGoalDate) {
@@ -173,19 +173,19 @@ export function updateDynamicDailyGoal(chinese, history = {}) {
     const studiedMinutes = (history && history[curISO]) || 0;
 
     if (studiedMinutes >= currentGoal) {
-      if (maxGoalReached || currentGoal >= 120) {
+      if (maxGoalReached || currentGoal >= 180) {
         maxGoalReached = true;
-        // Колеблется: каждый день рандомно от 90 до 120 минут
-        currentGoal = Math.floor(Math.random() * ((120 - 90) / 5 + 1)) * 5 + 90;
+        // Колеблется: каждый день рандомно от 150 до 180 минут (2.5 - 3 часа)
+        currentGoal = Math.floor(Math.random() * ((180 - 150) / 5 + 1)) * 5 + 150;
       } else {
-        currentGoal = Math.min(120, currentGoal + 5);
-        if (currentGoal >= 120) {
+        currentGoal = Math.min(180, currentGoal + 5);
+        if (currentGoal >= 180) {
           maxGoalReached = true;
         }
       }
     } else if (studiedMinutes === 0) {
       currentGoal = Math.max(15, currentGoal - 10);
-      if (currentGoal < 90) {
+      if (currentGoal < 150) {
         maxGoalReached = false;
       }
     }
@@ -267,6 +267,7 @@ export function getState() {
     if (
       updatedChinese.lastGoalDate !== rawChinese.lastGoalDate ||
       updatedChinese.currentDailyGoal !== rawChinese.currentDailyGoal ||
+      updatedChinese.maxGoalReached !== rawChinese.maxGoalReached ||
       rawChinese.wordsTarget === 1200 ||
       !Array.isArray(rawChinese.groups)
     ) {

@@ -105,7 +105,7 @@ export function render(container, state) {
           <form class="settings-form" id="form-chinese-settings">
             <div class="settings-row">
               <label class="settings-label" for="setting-daily-minutes">Текущая динамическая цель (currentDailyGoal):</label>
-              <input type="number" class="form-input settings-input" id="setting-daily-minutes" min="15" max="120" step="5" value="${chinese.currentDailyGoal ?? chinese.dailyGoalMinutes ?? 30}" required />
+              <input type="number" class="form-input settings-input" id="setting-daily-minutes" min="15" max="180" step="5" value="${chinese.currentDailyGoal ?? chinese.dailyGoalMinutes ?? 30}" required />
             </div>
 
             <div class="settings-row">
@@ -402,9 +402,9 @@ function attachEventListeners(container, state) {
       ...prev,
       chinese: {
         ...(prev.chinese || {}),
-        dailyGoalMinutes: isNaN(dailyGoalMinutes) ? 30 : Math.min(120, Math.max(15, dailyGoalMinutes)),
-        currentDailyGoal: isNaN(dailyGoalMinutes) ? 30 : Math.min(120, Math.max(15, dailyGoalMinutes)),
-        maxGoalReached: !isNaN(dailyGoalMinutes) && dailyGoalMinutes >= 120,
+        dailyGoalMinutes: isNaN(dailyGoalMinutes) ? 30 : Math.min(180, Math.max(15, dailyGoalMinutes)),
+        currentDailyGoal: isNaN(dailyGoalMinutes) ? 30 : Math.min(180, Math.max(15, dailyGoalMinutes)),
+        maxGoalReached: !isNaN(dailyGoalMinutes) && dailyGoalMinutes >= 180,
         wordsTarget: isNaN(wordsTarget) ? 3245 : wordsTarget,
         wordsLearned: isNaN(wordsLearned) ? 0 : wordsLearned
       }

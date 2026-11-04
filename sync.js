@@ -30,13 +30,23 @@ export function getSyncSecret() {
   return secret ? secret.trim() : '';
 }
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+  if (typeof AbortController === 'undefined') {
+    return fetch(url, options);
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 export async function pull() {
   if (!isConfigured()) return null;
   const endpoint = getSyncEndpoint();
   const secret = getSyncSecret();
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetchWithTimeout(endpoint, {
       method: 'GET',
       headers: {
         'X-Sync-Secret': secret
@@ -69,7 +79,7 @@ export async function pullAndMerge() {
   const secret = getSyncSecret();
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetchWithTimeout(endpoint, {
       method: 'GET',
       headers: {
         'X-Sync-Secret': secret
@@ -115,7 +125,7 @@ async function executePush(state) {
   const secret = getSyncSecret();
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetchWithTimeout(endpoint, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

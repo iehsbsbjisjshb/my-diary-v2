@@ -1,9 +1,11 @@
-const CACHE_NAME = 'diary-v2-v44';
+const CACHE_NAME = 'diary-v2-v45';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './flatpickr.min.css',
+  './flatpickr.min.js',
   './app.js',
   './storage.js',
   './sync.js',
@@ -74,48 +76,93 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Навигация и скрипты/стили — network-first (всегда свежий код, в офлайне из кэша)
-  if (
-    request.mode === 'navigate' ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.html') ||
-    url.pathname === '/' ||
-    url.pathname.endsWith('/')
-  ) {
+  // 2. Навигация (HTML) — Fast Network с быстрым fallback на кэш (1200 мс)
+  // Это гарантирует открытие PWA на любом Wi-Fi даже при медленном соединении или блокировках
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      new Promise((resolve) => {
+        let isDone = false;
+
+        const fallbackToCache = async () => {
+          if (isDone) return;
+          const cached = (await caches.match('./index.html')) || 
+                         (await caches.match('index.html')) || 
+                         (await caches.match('./')) || 
+                         (await caches.match('/'));
+          if (cached && !isDone) {
+            isDone = true;
+            resolve(cached);
           }
-          return networkResponse;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          if (request.mode === 'navigate') {
-            return (await caches.match('./index.html')) || (await caches.match('index.html'));
-          }
-        })
+        };
+
+        const timer = setTimeout(fallbackToCache, 1200);
+
+        fetch(request)
+          .then((networkResponse) => {
+            clearTimeout(timer);
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+              if (!isDone) {
+                isDone = true;
+                resolve(networkResponse);
+              }
+            } else {
+              fallbackToCache().then(() => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve(networkResponse);
+                }
+              });
+            }
+          })
+          .catch(async () => {
+            clearTimeout(timer);
+            await fallbackToCache();
+            if (!isDone) {
+              isDone = true;
+              resolve(new Response('Offline', { status: 503, statusText: 'Offline' }));
+            }
+          });
+      })
     );
     return;
   }
 
-  // 3. Остальные ассеты (иконки, манифест) — cache-first
+  // 3. Локальные статические ассеты (JS, CSS, SVG, JSON) — Stale-While-Revalidate
+  // Из кэша отдаются мгновенно (0 мс), сетевой запрос обновляет кэш в фоне
+  if (url.origin === location.origin) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const fetchPromise = fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // 4. Внешние ресурсы (например, шрифты) — cache-first
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200) {
           const copy = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return networkResponse;
-      });
+      }).catch(() => new Response('', { status: 408, statusText: 'Timeout' }));
     })
   );
 });
