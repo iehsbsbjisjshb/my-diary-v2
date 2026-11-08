@@ -934,8 +934,10 @@ input[type="checkbox"]:checked {
 .goal-item {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.9rem;
+  flex-wrap: wrap;
 }
 
 .goal-num {
@@ -947,11 +949,28 @@ input[type="checkbox"]:checked {
   font-weight: 500;
   color: var(--text-main);
   flex: 1;
+  min-width: 140px;
 }
 
 .goal-deadline {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.goal-days-badge {
+  font-weight: 600;
+  color: var(--accent-color, #2563eb);
+}
+
+.goal-days-badge.goal-days-urgent {
+  color: #ea580c;
+}
+
+.goal-days-badge.goal-days-today,
+.goal-days-badge.goal-days-overdue {
+  color: #dc2626;
+  font-weight: 700;
 }
 
 /* Виджет китайского языка */
@@ -970,6 +989,28 @@ input[type="checkbox"]:checked {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chinese-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chinese-total-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  background-color: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-color, #2563eb);
+  white-space: nowrap;
 }
 
 .streak-badge {

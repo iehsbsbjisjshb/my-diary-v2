@@ -203,6 +203,160 @@ export function updateDynamicDailyGoal(chinese, history = {}) {
   };
 }
 
+export function parseTaskHomeworkTitle(taskTitle) {
+  const str = (taskTitle || '').trim();
+  const colonIdx = str.indexOf(':');
+  if (colonIdx > 0 && colonIdx < 30) {
+    const subject = str.substring(0, colonIdx).trim();
+    const title = str.substring(colonIdx + 1).trim() || str;
+    return { subject, title };
+  }
+  return { subject: 'Домашка', title: str };
+}
+
+export function syncHomeworkAndTasks(state, prevState = null) {
+  if (!state) return state;
+  let tasks = Array.isArray(state.tasks) ? state.tasks.map((t) => ({ ...t })) : [];
+  let homework = Array.isArray(state.homework) ? state.homework.map((h) => ({ ...h })) : [];
+
+  const prevTasksMap = new Map();
+  const prevHwMap = new Map();
+  if (prevState) {
+    (prevState.tasks || []).forEach((t) => { if (t && t.id) prevTasksMap.set(t.id, t); });
+    (prevState.homework || []).forEach((h) => { if (h && h.id) prevHwMap.set(h.id, h); });
+  }
+
+  // 1. Обнаружение удалений, если передан предыдущий стейт
+  if (prevState) {
+    const currentHwIds = new Set(homework.map((h) => h.id));
+    prevHwMap.forEach((prevHw, prevHwId) => {
+      if (!currentHwIds.has(prevHwId)) {
+        const linkedTaskId = prevHw.taskId;
+        tasks = tasks.filter((t) => t.id !== linkedTaskId && t.homeworkId !== prevHwId);
+      }
+    });
+
+    const currentTaskIds = new Set(tasks.map((t) => t.id));
+    prevTasksMap.forEach((prevTask, prevTaskId) => {
+      if (!currentTaskIds.has(prevTaskId) && prevTask.category === 'homework') {
+        const linkedHwId = prevTask.homeworkId;
+        homework = homework.filter((h) => h.id !== linkedHwId && h.taskId !== prevTaskId);
+      }
+    });
+  }
+
+  const taskMap = new Map();
+  const hwMap = new Map();
+  tasks.forEach((t) => { if (t && t.id) taskMap.set(t.id, t); });
+  homework.forEach((h) => { if (h && h.id) hwMap.set(h.id, h); });
+
+  // 2. Для каждого элемента домашки проверяем наличие парной задачи
+  homework.forEach((hw, idx) => {
+    if (!hw) return;
+    let pairedTask = hw.taskId ? taskMap.get(hw.taskId) : null;
+    if (!pairedTask && hw.id) {
+      pairedTask = tasks.find((t) => t && t.homeworkId === hw.id);
+    }
+
+    if (!pairedTask) {
+      const taskId = hw.taskId || ('t_hw_' + hw.id);
+      const title = hw.subject ? `${hw.subject}: ${hw.title}` : hw.title;
+      pairedTask = {
+        id: taskId,
+        title,
+        date: hw.dueDate || '',
+        time: '',
+        duration: 0,
+        category: 'homework',
+        done: Boolean(hw.done),
+        note: '',
+        homeworkId: hw.id
+      };
+      tasks.push(pairedTask);
+      taskMap.set(taskId, pairedTask);
+      hw.taskId = taskId;
+    } else {
+      pairedTask.homeworkId = hw.id;
+      hw.taskId = pairedTask.id;
+
+      const prevHw = hw.id ? prevHwMap.get(hw.id) : null;
+      const prevT = pairedTask.id ? prevTasksMap.get(pairedTask.id) : null;
+
+      if (prevHw && prevT) {
+        if (hw.done !== prevHw.done) {
+          pairedTask.done = hw.done;
+        } else if (pairedTask.done !== prevT.done) {
+          hw.done = pairedTask.done;
+        } else {
+          hw.done = pairedTask.done = Boolean(hw.done || pairedTask.done);
+        }
+
+        if (hw.dueDate !== prevHw.dueDate) {
+          pairedTask.date = hw.dueDate;
+        } else if (pairedTask.date !== prevT.date) {
+          hw.dueDate = pairedTask.date;
+        }
+
+        if (hw.title !== prevHw.title || hw.subject !== prevHw.subject) {
+          pairedTask.title = hw.subject ? `${hw.subject}: ${hw.title}` : hw.title;
+        } else if (pairedTask.title !== prevT.title) {
+          const parsed = parseTaskHomeworkTitle(pairedTask.title);
+          hw.subject = parsed.subject;
+          hw.title = parsed.title;
+        }
+      } else {
+        pairedTask.done = hw.done = Boolean(hw.done || pairedTask.done);
+        if (hw.dueDate) pairedTask.date = hw.dueDate;
+        else if (pairedTask.date) hw.dueDate = pairedTask.date;
+      }
+    }
+  });
+
+  // 3. Для каждой задачи с категорией 'homework' проверяем наличие парной домашки
+  tasks = tasks.filter((t) => {
+    if (!t) return false;
+    if (t.category !== 'homework') {
+      if (t.homeworkId) {
+        homework = homework.filter((h) => h.id !== t.homeworkId);
+        hwMap.delete(t.homeworkId);
+        delete t.homeworkId;
+      }
+      return true;
+    }
+
+    let pairedHw = t.homeworkId ? hwMap.get(t.homeworkId) : null;
+    if (!pairedHw && t.id) {
+      pairedHw = homework.find((h) => h && h.taskId === t.id);
+    }
+
+    if (!pairedHw) {
+      const hwId = t.homeworkId || ('h_task_' + t.id);
+      const parsed = parseTaskHomeworkTitle(t.title || '');
+      pairedHw = {
+        id: hwId,
+        subject: parsed.subject,
+        title: parsed.title,
+        dueDate: t.date || '',
+        done: Boolean(t.done),
+        taskId: t.id
+      };
+      homework.push(pairedHw);
+      hwMap.set(hwId, pairedHw);
+      t.homeworkId = hwId;
+    } else {
+      t.homeworkId = pairedHw.id;
+      pairedHw.taskId = t.id;
+    }
+    return true;
+  });
+
+  return {
+    ...state,
+    tasks,
+    homework
+  };
+}
+
 export function getState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -274,26 +428,35 @@ export function getState() {
       needsPersist = true;
     }
 
+    const { words: _legacyWords, ...cleanParsed } = parsed;
+
+    const initialTasks = Array.isArray(cleanParsed.tasks) ? cleanParsed.tasks : [];
+    const initialHw = Array.isArray(cleanParsed.homework) ? cleanParsed.homework : [];
+    const synced = syncHomeworkAndTasks({ tasks: initialTasks, homework: initialHw }, null);
+    if (synced.tasks.length !== initialTasks.length || synced.homework.length !== initialHw.length) {
+      needsPersist = true;
+    }
+
     if (needsPersist) {
       try {
         const toSave = {
           ...parsed,
-          chinese: updatedChinese
+          chinese: updatedChinese,
+          tasks: synced.tasks,
+          homework: synced.homework
         };
         delete toSave.words;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
       } catch (e) {}
     }
 
-    const { words: _legacyWords, ...cleanParsed } = parsed;
-
     return {
       ...DEFAULT_STATE,
       ...cleanParsed,
       updatedAt: parsed.updatedAt || new Date().toISOString(),
       goals: Array.isArray(parsed.goals) ? parsed.goals : DEFAULT_STATE.goals,
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
-      homework: Array.isArray(parsed.homework) ? parsed.homework : [],
+      tasks: synced.tasks,
+      homework: synced.homework,
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       reviews: Array.isArray(parsed.reviews) ? parsed.reviews : [],
       chinese: updatedChinese,
@@ -324,10 +487,11 @@ export function setState(patch, options = {}) {
   try {
     const current = getState();
     const nextCandidate = typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    const synchronized = syncHomeworkAndTasks(nextCandidate, current);
     const next = {
-      ...nextCandidate,
-      updatedAt: (options.preserveUpdatedAt && nextCandidate.updatedAt)
-        ? nextCandidate.updatedAt
+      ...synchronized,
+      updatedAt: (options.preserveUpdatedAt && synchronized.updatedAt)
+        ? synchronized.updatedAt
         : new Date().toISOString()
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -373,7 +537,7 @@ export function onStateChange(fn) {
 
 // Доступ из глобальной области для отладки в консоли
 if (typeof window !== 'undefined') {
-  window.storage = { getState, setState, resetState, onStateChange, updateDynamicDailyGoal, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
+  window.storage = { getState, setState, resetState, onStateChange, updateDynamicDailyGoal, syncHomeworkAndTasks, parseTaskHomeworkTitle, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
   window.getState = getState;
   window.setState = setState;
   window.resetState = resetState;

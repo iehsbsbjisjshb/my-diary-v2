@@ -878,17 +878,35 @@ function attachEventListeners(container, state, meta) {
       const dueDate = container.querySelector('#hw-due-date').value;
       if (!subject || !title || !dueDate) return;
 
+      const hwId = 'h' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+      const taskId = 't_' + hwId;
+      const taskTitle = subject ? `${subject}: ${title}` : title;
+
       const newHw = {
-        id: 'h' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        id: hwId,
         subject,
         title,
         dueDate,
-        done: false
+        done: false,
+        taskId
+      };
+
+      const newTask = {
+        id: taskId,
+        title: taskTitle,
+        date: dueDate,
+        time: '',
+        duration: 0,
+        category: 'homework',
+        done: false,
+        note: '',
+        homeworkId: hwId
       };
 
       setState((prev) => ({
         ...prev,
-        homework: [...(prev.homework || []), newHw]
+        homework: [...(prev.homework || []), newHw],
+        tasks: [...(prev.tasks || []), newTask]
       }));
 
       showToast('Сохранено', { type: 'success' });
@@ -905,10 +923,15 @@ function attachEventListeners(container, state, meta) {
         const id = checkbox.getAttribute('data-hw-id');
         const checked = checkbox.checked;
 
-        setState((prev) => ({
-          ...prev,
-          homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: checked } : h))
-        }));
+        setState((prev) => {
+          const targetHw = (prev.homework || []).find((h) => h.id === id);
+          const linkedTaskId = targetHw?.taskId;
+          return {
+            ...prev,
+            homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: checked } : h)),
+            tasks: (prev.tasks || []).map((t) => (t.homeworkId === id || (linkedTaskId && t.id === linkedTaskId) ? { ...t, done: checked } : t))
+          };
+        });
       });
     });
 
@@ -916,10 +939,15 @@ function attachEventListeners(container, state, meta) {
     container.querySelectorAll('.btn-delete-hw').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-delete-hw-id');
-        setState((prev) => ({
-          ...prev,
-          homework: (prev.homework || []).filter((h) => h.id !== id)
-        }));
+        setState((prev) => {
+          const targetHw = (prev.homework || []).find((h) => h.id === id);
+          const linkedTaskId = targetHw?.taskId;
+          return {
+            ...prev,
+            homework: (prev.homework || []).filter((h) => h.id !== id),
+            tasks: (prev.tasks || []).filter((t) => t.homeworkId !== id && (!linkedTaskId || t.id !== linkedTaskId))
+          };
+        });
       });
     });
 
@@ -955,10 +983,15 @@ function attachEventListeners(container, state, meta) {
         // Сбрасываем id ДО вызова setState, чтобы перерендер закрыл инлайн-форму
         reschedulingHwId = null;
 
-        setState((prev) => ({
-          ...prev,
-          homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, dueDate: input.value } : h))
-        }));
+        setState((prev) => {
+          const targetHw = (prev.homework || []).find((h) => h.id === id);
+          const linkedTaskId = targetHw?.taskId;
+          return {
+            ...prev,
+            homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, dueDate: input.value } : h)),
+            tasks: (prev.tasks || []).map((t) => (t.homeworkId === id || (linkedTaskId && t.id === linkedTaskId) ? { ...t, date: input.value } : t))
+          };
+        });
         showToast('Сохранено', { type: 'success' });
       });
     });

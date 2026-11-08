@@ -1,4 +1,4 @@
-import { getState, setState } from '../storage.js';
+import { getState, setState, parseTaskHomeworkTitle } from '../storage.js';
 import { showToast } from '../toast.js';
 import { setupDatePicker } from './datepicker.js';
 
@@ -39,6 +39,40 @@ function formatShortDate(isoStr) {
     return `${parts[2]} ${MONTHS_RU[parts[1] - 1] || ''}`;
   }
   return isoStr;
+}
+
+function formatDeadlineWithDays(deadlineISO, referenceDateISO) {
+  if (!deadlineISO) return '';
+  const parts = deadlineISO.split('-').map(Number);
+  if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+    return `<span class="goal-deadline">до ${escapeHtml(deadlineISO)}</span>`;
+  }
+  const [y, m, d] = parts;
+  const dateFormatted = `${d} ${MONTHS_FULL_RU[m - 1] || ''} ${y}`;
+
+  const refParts = referenceDateISO.split('-').map(Number);
+  const utcRef = Date.UTC(refParts[0], refParts[1] - 1, refParts[2]);
+  const utcDead = Date.UTC(y, m - 1, d);
+  const diffDays = Math.round((utcDead - utcRef) / (1000 * 60 * 60 * 24));
+
+  let daysText = '';
+  let badgeClass = 'goal-days-normal';
+  if (diffDays > 0) {
+    const word = getPluralDays(diffDays);
+    const verb = (diffDays % 10 === 1 && diffDays % 100 !== 11) ? 'остался' : 'осталось';
+    daysText = `${verb} ${diffDays} ${word}`;
+    if (diffDays <= 7) badgeClass = 'goal-days-urgent';
+  } else if (diffDays === 0) {
+    daysText = 'сегодня';
+    badgeClass = 'goal-days-today';
+  } else {
+    const absDays = Math.abs(diffDays);
+    const word = getPluralDays(absDays);
+    daysText = `просрочено на ${absDays} ${word}`;
+    badgeClass = 'goal-days-overdue';
+  }
+
+  return `<span class="goal-deadline">до ${dateFormatted} <span class="goal-days-badge ${badgeClass}">(${daysText})</span></span>`;
 }
 
 const CATEGORIES = {
@@ -143,18 +177,27 @@ export function render(container, state) {
     .map((g) => `${g.name} (${g.wordCount} ${getPluralWords(g.wordCount)})`)
     .join(', ');
 
-  // 2. Просроченные задачи и домашка
+  // Общее время за китайским языком
+  const historyMinutesSum = Object.values(chinese.history || {}).reduce((acc, v) => acc + (Number(v) || 0), 0);
+  const effectiveTotalMinutes = Math.max(Number(chinese.totalMinutes) || 0, historyMinutesSum);
+  const totalHours = (effectiveTotalMinutes / 60).toFixed(1).replace('.0', '');
+
+  // 2. Просроченные задачи и домашка (дедупликация связанных сущностей)
   const overdueTasks = (state.tasks || []).filter((t) => t && t.date && t.date < todayISO && !t.done);
-  const overdueHomework = (state.homework || []).filter((h) => h && h.dueDate && h.dueDate < todayISO && !h.done);
+  const linkedOverdueHwIds = new Set(overdueTasks.map((t) => t.homeworkId).filter(Boolean));
+  const overdueHomework = (state.homework || []).filter((h) => h && h.dueDate && h.dueDate < todayISO && !h.done && !linkedOverdueHwIds.has(h.id) && !overdueTasks.some((t) => t.id === h.taskId));
   const hasOverdue = overdueTasks.length > 0 || overdueHomework.length > 0;
 
-  // 3. Задачи и домашка на сегодня
+  // 3. Задачи и домашка на сегодня (дедупликация связанных сущностей)
   const todayTasks = (state.tasks || []).filter((t) => t && t.date === selectedDateISO);
   const todayHomework = (state.homework || []).filter((h) => h && h.dueDate === selectedDateISO);
 
+  const linkedHwIds = new Set(todayTasks.map((t) => t.homeworkId).filter(Boolean));
+  const standaloneHomework = todayHomework.filter((h) => !linkedHwIds.has(h.id) && !todayTasks.some((t) => t.id === h.taskId));
+
   const timelineItems = [
     ...todayTasks.map((t) => ({ ...t, itemType: 'task' })),
-    ...todayHomework.map((h) => ({
+    ...standaloneHomework.map((h) => ({
       id: h.id,
       title: `${h.subject ? `${h.subject}: ` : ''}${h.title}`,
       time: '',
@@ -221,7 +264,7 @@ export function render(container, state) {
               <li class="goal-item">
                 <span class="goal-num">${idx + 1}.</span>
                 <span class="goal-title">${escapeHtml(g.title)}</span>
-                ${g.deadline ? `<span class="goal-deadline">до ${escapeHtml(g.deadline)}</span>` : ''}
+                ${g.deadline ? formatDeadlineWithDays(g.deadline, todayISO) : ''}
               </li>
             `
               )
@@ -235,7 +278,13 @@ export function render(container, state) {
               <span class="fire-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/></svg></span>
               <span class="streak-text">${currentStreak} ${getPluralDays(currentStreak)} подряд</span>
             </div>
-            <button class="btn btn-accent btn-sm" id="btn-open-minutes-modal">+ Отметить занятие</button>
+            <div class="chinese-header-right">
+              <div class="chinese-total-badge" title="Всего времени за китайским: ${effectiveTotalMinutes} мин">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>${totalHours} ч пройдено</span>
+              </div>
+              <button class="btn btn-accent btn-sm" id="btn-open-minutes-modal">+ Отметить занятие</button>
+            </div>
           </div>
 
           <div class="progress-block">
@@ -826,38 +875,99 @@ function attachEventListeners(container, state, meta) {
     activeTaskModal = null;
 
     if (mode === 'new') {
+      const taskId = 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+      let hwId = null;
+      let newHw = null;
+
+      if (category === 'homework') {
+        hwId = 'h_' + taskId;
+        const parsed = parseTaskHomeworkTitle(title);
+        newHw = {
+          id: hwId,
+          subject: parsed.subject,
+          title: parsed.title,
+          dueDate: targetDate,
+          done: false,
+          taskId
+        };
+      }
+
       const newTask = {
-        id: 't' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        id: taskId,
         title,
         date: targetDate,
         time,
         duration,
         category,
         done: false,
-        note
+        note,
+        ...(hwId ? { homeworkId: hwId } : {})
       };
+
       setState((prev) => ({
         ...prev,
-        tasks: [...(prev.tasks || []), newTask]
+        tasks: [...(prev.tasks || []), newTask],
+        homework: newHw ? [...(prev.homework || []), newHw] : (prev.homework || [])
       }));
       showToast('Задача создана', { type: 'success' });
     } else {
-      setState((prev) => ({
-        ...prev,
-        tasks: (prev.tasks || []).map((t) =>
-          t.id === taskId
-            ? {
-                ...t,
-                title,
-                date: targetDate,
-                time,
-                duration,
-                category,
-                note
-              }
-            : t
-        )
-      }));
+      setState((prev) => {
+        const existingTask = (prev.tasks || []).find((t) => t.id === taskId);
+        let updatedHomework = [...(prev.homework || [])];
+
+        if (category === 'homework') {
+          const parsed = parseTaskHomeworkTitle(title);
+          const hwId = existingTask?.homeworkId || ('h_' + taskId);
+          const existingHwIdx = updatedHomework.findIndex((h) => h.id === hwId || h.taskId === taskId);
+
+          if (existingHwIdx !== -1) {
+            updatedHomework[existingHwIdx] = {
+              ...updatedHomework[existingHwIdx],
+              subject: parsed.subject,
+              title: parsed.title,
+              dueDate: targetDate,
+              taskId
+            };
+          } else {
+            updatedHomework.push({
+              id: hwId,
+              subject: parsed.subject,
+              title: parsed.title,
+              dueDate: targetDate,
+              done: Boolean(existingTask?.done),
+              taskId
+            });
+          }
+        } else if (existingTask?.category === 'homework' || existingTask?.homeworkId) {
+          const hwId = existingTask.homeworkId;
+          updatedHomework = updatedHomework.filter((h) => h.id !== hwId && h.taskId !== taskId);
+        }
+
+        const updatedTasks = (prev.tasks || []).map((t) => {
+          if (t.id !== taskId) return t;
+          const updated = {
+            ...t,
+            title,
+            date: targetDate,
+            time,
+            duration,
+            category,
+            note
+          };
+          if (category === 'homework') {
+            updated.homeworkId = existingTask?.homeworkId || ('h_' + taskId);
+          } else {
+            delete updated.homeworkId;
+          }
+          return updated;
+        });
+
+        return {
+          ...prev,
+          tasks: updatedTasks,
+          homework: updatedHomework
+        };
+      });
       showToast('Сохранено', { type: 'success' });
     }
   });
@@ -869,10 +979,13 @@ function attachEventListeners(container, state, meta) {
       const taskId = btn.getAttribute('data-delete-task-id');
       const taskToDelete = (state.tasks || []).find((t) => t.id === taskId);
       if (!taskToDelete) return;
+      const linkedHwId = taskToDelete.homeworkId;
+      const hwToDelete = (state.homework || []).find((h) => h.id === linkedHwId || h.taskId === taskId);
 
       setState((prev) => ({
         ...prev,
-        tasks: (prev.tasks || []).filter((t) => t.id !== taskId)
+        tasks: (prev.tasks || []).filter((t) => t.id !== taskId),
+        homework: (prev.homework || []).filter((h) => h.id !== linkedHwId && h.taskId !== taskId)
       }));
 
       showToast('Задача удалена', {
@@ -882,7 +995,8 @@ function attachEventListeners(container, state, meta) {
           onClick: () => {
             setState((prev) => ({
               ...prev,
-              tasks: [...(prev.tasks || []), taskToDelete]
+              tasks: [...(prev.tasks || []), taskToDelete],
+              homework: hwToDelete ? [...(prev.homework || []), hwToDelete] : (prev.homework || [])
             }));
             showToast('Задача восстановлена', { type: 'success' });
           }
@@ -1075,15 +1189,27 @@ function attachEventListeners(container, state, meta) {
             }
           }
 
+          const linkedHwId = targetTask?.homeworkId;
+          const updatedHomework = (prev.homework || []).map((h) => {
+            if (h.id === linkedHwId || h.taskId === id) {
+              return { ...h, done: checked };
+            }
+            return h;
+          });
+
           return {
             ...prev,
             chinese: updatedChinese,
-            tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, done: checked } : t))
+            tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, done: checked } : t)),
+            homework: updatedHomework
           };
         } else {
+          const targetHw = (prev.homework || []).find((h) => h.id === id);
+          const linkedTaskId = targetHw?.taskId;
           return {
             ...prev,
-            homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: checked } : h))
+            homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: checked } : h)),
+            tasks: (prev.tasks || []).map((t) => (t.homeworkId === id || (linkedTaskId && t.id === linkedTaskId) ? { ...t, done: checked } : t))
           };
         }
       });
@@ -1103,12 +1229,24 @@ function attachEventListeners(container, state, meta) {
           : (state.homework || []).find((h) => h.id === id);
 
         if (!itemToDelete) return;
+        const linkedId = type === 'task' ? (itemToDelete.homeworkId || ('h_' + id)) : (itemToDelete.taskId || ('t_' + id));
+        const pairedToDelete = type === 'task'
+          ? (state.homework || []).find((h) => h.id === linkedId || h.taskId === id)
+          : (state.tasks || []).find((t) => t.id === linkedId || t.homeworkId === id);
 
         setState((prev) => {
           if (type === 'task') {
-            return { ...prev, tasks: (prev.tasks || []).filter((t) => t.id !== id) };
+            return {
+              ...prev,
+              tasks: (prev.tasks || []).filter((t) => t.id !== id),
+              homework: (prev.homework || []).filter((h) => h.id !== linkedId && h.taskId !== id)
+            };
           } else {
-            return { ...prev, homework: (prev.homework || []).filter((h) => h.id !== id) };
+            return {
+              ...prev,
+              homework: (prev.homework || []).filter((h) => h.id !== id),
+              tasks: (prev.tasks || []).filter((t) => t.id !== linkedId && t.homeworkId !== id)
+            };
           }
         });
 
@@ -1117,13 +1255,15 @@ function attachEventListeners(container, state, meta) {
           action: {
             text: 'Отменить',
             onClick: () => {
-              setState((prev) => {
-                if (type === 'task') {
-                  return { ...prev, tasks: [...(prev.tasks || []), itemToDelete] };
-                } else {
-                  return { ...prev, homework: [...(prev.homework || []), itemToDelete] };
-                }
-              });
+              setState((prev) => ({
+                ...prev,
+                tasks: type === 'task'
+                  ? [...(prev.tasks || []), itemToDelete]
+                  : (pairedToDelete ? [...(prev.tasks || []), pairedToDelete] : prev.tasks),
+                homework: type === 'homework'
+                  ? [...(prev.homework || []), itemToDelete]
+                  : (pairedToDelete ? [...(prev.homework || []), pairedToDelete] : prev.homework)
+              }));
               showToast('Восстановлено', { type: 'success' });
             }
           }
@@ -1131,28 +1271,40 @@ function attachEventListeners(container, state, meta) {
       } else if (action === 'done') {
         setState((prev) => {
           if (type === 'task') {
+            const targetTask = (prev.tasks || []).find((t) => t.id === id);
+            const linkedHwId = targetTask?.homeworkId;
             return {
               ...prev,
-              tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, done: true } : t))
+              tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, done: true } : t)),
+              homework: (prev.homework || []).map((h) => (h.id === linkedHwId || h.taskId === id ? { ...h, done: true } : h))
             };
           } else {
+            const targetHw = (prev.homework || []).find((h) => h.id === id);
+            const linkedTaskId = targetHw?.taskId;
             return {
               ...prev,
-              homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: true } : h))
+              homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, done: true } : h)),
+              tasks: (prev.tasks || []).map((t) => (t.homeworkId === id || (linkedTaskId && t.id === linkedTaskId) ? { ...t, done: true } : t))
             };
           }
         });
       } else if (action === 'tomorrow') {
         setState((prev) => {
           if (type === 'task') {
+            const targetTask = (prev.tasks || []).find((t) => t.id === id);
+            const linkedHwId = targetTask?.homeworkId;
             return {
               ...prev,
-              tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, date: tomorrowISO } : t))
+              tasks: (prev.tasks || []).map((t) => (t.id === id ? { ...t, date: tomorrowISO } : t)),
+              homework: (prev.homework || []).map((h) => (h.id === linkedHwId || h.taskId === id ? { ...h, dueDate: tomorrowISO } : h))
             };
           } else {
+            const targetHw = (prev.homework || []).find((h) => h.id === id);
+            const linkedTaskId = targetHw?.taskId;
             return {
               ...prev,
-              homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, dueDate: tomorrowISO } : h))
+              homework: (prev.homework || []).map((h) => (h.id === id ? { ...h, dueDate: tomorrowISO } : h)),
+              tasks: (prev.tasks || []).map((t) => (t.homeworkId === id || (linkedTaskId && t.id === linkedTaskId) ? { ...t, date: tomorrowISO } : t))
             };
           }
         });
