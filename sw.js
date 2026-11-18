@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diary-v2-v48';
+const CACHE_NAME = 'diary-v2-v49';
 
 const STATIC_ASSETS = [
   './',

@@ -535,10 +535,7 @@ export function onStateChange(fn) {
   return () => listeners.delete(fn);
 }
 
-// Доступ из глобальной области для отладки в консоли
-if (typeof window !== 'undefined') {
-  window.storage = { getState, setState, resetState, onStateChange, updateDynamicDailyGoal, syncHomeworkAndTasks, parseTaskHomeworkTitle, DEFAULT_STATE, SCHEDULE_10R_DEFAULT, DEFAULT_BELLS_WEEKDAY, DEFAULT_BELLS_SATURDAY };
-  window.getState = getState;
-  window.setState = setState;
-  window.resetState = resetState;
+// Доступ из глобальной области для отладки в консоли (только чтение, только для localhost)
+if (typeof window !== 'undefined' && location.hostname === 'localhost') {
+  window.__diaryDebug = { getState };
 }

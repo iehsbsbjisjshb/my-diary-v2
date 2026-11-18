@@ -55,16 +55,52 @@ export default {
 
     // PUT /state — сохраняет JSON в KV
     if (request.method === 'PUT') {
+      // Проверка Content-Length до чтения тела
+      const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+      const MAX_BODY = 512 * 1024; // 512 KB
+      if (contentLength > MAX_BODY) {
+        return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
+          status: 413,
+          headers: { ...securityHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       try {
         const text = await request.text();
-        JSON.parse(text); // валидация корректности JSON
+        if (text.length > MAX_BODY) {
+          return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
+            status: 413,
+            headers: { ...securityHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const parsed = JSON.parse(text);
+        
+        // Структурная валидация
+        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+          throw new Error('Invalid state structure');
+        }
+        if (parsed.version !== 2) {
+          throw new Error('Unknown state version');
+        }
+        
+        // Запрет prototype pollution
+        const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+        const hasDangerous = (obj: any, depth = 0): boolean => {
+          if (depth > 5 || typeof obj !== 'object' || obj === null) return false;
+          return Object.keys(obj).some(k => dangerousKeys.includes(k) || hasDangerous(obj[k], depth + 1));
+        };
+        if (hasDangerous(parsed)) {
+          throw new Error('Forbidden keys in payload');
+        }
+
         await env.STATE_KV.put('state', text);
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: { ...securityHeaders, 'Content-Type': 'application/json' },
         });
       } catch (err: any) {
-        return new Response(JSON.stringify({ error: 'Invalid JSON', details: err?.message }), {
+        return new Response(JSON.stringify({ error: 'Invalid JSON or Forbidden', details: err?.message }), {
           status: 400,
           headers: { ...securityHeaders, 'Content-Type': 'application/json' },
         });

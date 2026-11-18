@@ -88,7 +88,16 @@ export async function pullAndMerge() {
 
     if (res.status === 200) {
       const remote = await res.json();
-      if (remote && typeof remote === 'object' && Object.keys(remote).length > 0) {
+      
+      // Валидация структуры
+      const isValid = remote && typeof remote === 'object' && !Array.isArray(remote) && remote.version === 2;
+      const hasDangerous = (obj, depth = 0) => {
+        if (depth > 5 || typeof obj !== 'object' || obj === null) return false;
+        const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+        return Object.keys(obj).some(k => dangerousKeys.includes(k) || hasDangerous(obj[k], depth + 1));
+      };
+
+      if (isValid && !hasDangerous(remote)) {
         // Заменяем локальный state данными с сервера
         localStorage.setItem('diary-v2', JSON.stringify(remote));
         const normalized = getState();
@@ -102,7 +111,7 @@ export async function pullAndMerge() {
 
         return true;
       } else {
-        console.warn('Sync pullAndMerge: пустой объект или нет данных на сервере');
+        console.warn('Sync pullAndMerge: невалидные данные на сервере');
         return false;
       }
     } else {

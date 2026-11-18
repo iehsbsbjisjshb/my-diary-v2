@@ -139,7 +139,7 @@ export function render(container, state) {
 
             <div class="settings-row">
               <label class="settings-label" for="sync-secret">Секретный ключ (X-Sync-Secret):</label>
-              <input type="password" class="form-input" id="sync-secret" placeholder="Секретный токен" value="${escapeHtml(syncSecret)}" />
+              <input type="password" class="form-input" id="sync-secret" placeholder="${syncSecret ? '(сохранён, введите новый для изменения)' : 'Секретный токен'}" value="" />
             </div>
 
             <div class="sync-actions-row">
@@ -417,10 +417,10 @@ function attachEventListeners(container, state) {
   container.querySelector('#form-sync-config')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const url = (container.querySelector('#sync-url')?.value || '').trim();
-    const secret = (container.querySelector('#sync-secret')?.value || '').trim();
+    const secretInput = (container.querySelector('#sync-secret')?.value || '').trim();
 
     localStorage.setItem('syncUrl', url);
-    localStorage.setItem('syncSecret', secret);
+    if (secretInput) localStorage.setItem('syncSecret', secretInput);
 
     if (!isConfigured()) {
       syncStatusMessage = 'Укажите URL воркера и секретный ключ';
@@ -478,10 +478,26 @@ function attachEventListeners(container, state) {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const imported = JSON.parse(event.target.result);
-        if (!imported || typeof imported !== 'object' || imported.version !== 2) {
-          throw new Error('Файл не содержит корректную структуру данных Ежедневника v2 (version: 2)');
+        const text = event.target.result;
+        if (text.length > 2 * 1024 * 1024) { // 2 MB max
+          throw new Error('Файл слишком большой (максимум 2 МБ)');
         }
+        
+        const imported = JSON.parse(text);
+        if (!imported || typeof imported !== 'object' || Array.isArray(imported) || imported.version !== 2) {
+          throw new Error('Некорректная структура');
+        }
+        
+        // Удаление опасных ключей рекурсивно
+        const sanitize = (obj, depth = 0) => {
+          if (depth > 10 || typeof obj !== 'object' || obj === null) return obj;
+          const dangerous = ['__proto__', 'constructor', 'prototype'];
+          dangerous.forEach(k => { if (k in obj) delete obj[k]; });
+          Object.values(obj).forEach(v => sanitize(v, depth + 1));
+          return obj;
+        };
+        
+        sanitize(imported);
 
         if (confirm('Заменить текущие данные данными из выбранного файла?')) {
           setState(() => imported);
