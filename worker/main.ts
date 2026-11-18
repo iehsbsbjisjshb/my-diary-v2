@@ -7,16 +7,21 @@ export interface Env {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const origin = env.ALLOWED_ORIGIN || '*';
-    const corsHeaders: Record<string, string> = {
+    const securityHeaders: Record<string, string> = {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Secret',
       'Access-Control-Max-Age': '86400',
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
     };
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders });
+      return new Response(null, { status: 204, headers: securityHeaders });
     }
 
     const url = new URL(request.url);
@@ -25,7 +30,7 @@ export default {
     if (url.pathname !== '/state' && url.pathname !== '/state/') {
       return new Response(JSON.stringify({ error: 'Not Found' }), {
         status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -34,7 +39,7 @@ export default {
     if (!env.SYNC_SECRET || clientSecret !== env.SYNC_SECRET) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -44,7 +49,7 @@ export default {
       const responseBody = state ? state : '{}';
       return new Response(responseBody, {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -56,19 +61,19 @@ export default {
         await env.STATE_KV.put('state', text);
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...securityHeaders, 'Content-Type': 'application/json' },
         });
       } catch (err: any) {
         return new Response(JSON.stringify({ error: 'Invalid JSON', details: err?.message }), {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...securityHeaders, 'Content-Type': 'application/json' },
         });
       }
     }
 
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...securityHeaders, 'Content-Type': 'application/json' },
     });
   },
 };
